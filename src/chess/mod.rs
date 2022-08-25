@@ -1,3 +1,3 @@
 
 pub mod board;
-mod pieces;
+mod piece;
