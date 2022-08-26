@@ -36,6 +36,7 @@ fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str
             } else if fen_value.is_ascii_alphabetic() {
                 board_array[line_number][current_line_index] = Square::Contains(piece::Piece::new(
                     fen_value.into(),
+                    fen_value.into(),
                     Position::new(line_number as i8, current_line_index as i8),
                 ));
                 current_line_index += 1;
@@ -50,7 +51,6 @@ impl Board {
         initialize_board(&mut board_array);
         Board { board: board_array }
     }
-
 }
 
 impl fmt::Display for Board {

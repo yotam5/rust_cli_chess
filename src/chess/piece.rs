@@ -2,15 +2,41 @@ use core::panic;
 use std::convert::From;
 use std::fmt;
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct Piece {
+    pub p_type: PieceType,
+    pub p_color: Color,
+    pub p_position: Position,
+}
+
+impl Piece {
+    pub fn new(p_type: PieceType, p_color: Color, p_position: Position) -> Self {
+        Piece {
+            p_type,
+            p_position,
+            p_color,
+        }
+    }
+}
+
+impl fmt::Display for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.pad(&format!("{}", piece_to_char(&self.p_type, &self.p_color)))
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Directions {
     Up,
     Down,
     Left,
     Right,
-    UpLeft,    // diagnol up left
-    UpRight,   //diagnol up right
-    DownLeft,  // diagnol left down
+    UpLeft,
+    // diagnol up left
+    UpRight,
+    //diagnol up right
+    DownLeft,
+    // diagnol left down
     DownRight, //diagnol right down
 }
 
@@ -48,12 +74,26 @@ impl From<char> for Color {
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum PieceType {
-    Pawn(Color),
-    Knight(Color),
-    Bishop(Color),
-    Rook(Color),
-    Queen(Color),
-    King(Color),
+    Pawn,
+    Knight,
+    Bishop,
+    Rook,
+    Queen,
+    King,
+}
+
+impl From<char> for PieceType {
+    fn from(item: char) -> Self {
+        match item {
+            'p' | 'P' => PieceType::Pawn,
+            'k' | 'K' => PieceType::King,
+            'n' | 'N' => PieceType::Knight,
+            'r' | 'R' => PieceType::Rook,
+            'q' | 'Q' => PieceType::Queen,
+            'b' | 'B' => PieceType::Bishop,
+            _ => panic!("not a valid character for chess fen string"),
+        }
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -61,64 +101,75 @@ pub struct Position {
     pub x: i8,
     pub y: i8,
 }
+
 impl Position {
     pub fn new(x: i8, y: i8) -> Self {
         Position { x, y }
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Piece {
-    pub piece_type: PieceType,
-    pub position: Position,
-}
-
-impl Piece {
-    pub fn new(piece_type: PieceType, position: Position) -> Self {
-        Piece {
-            piece_type,
-            position,
-        }
+impl Default for Position {
+    fn default() -> Self {
+        Position::new(-1, -1)
     }
 }
 
-impl fmt::Display for Piece {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.pad(&format!("{}", self.piece_type))
-    }
-}
-
-impl From<char> for PieceType {
+impl From<char> for Piece {
     fn from(item: char) -> Self {
         let color: Color = item.into();
-        match item {
-            'p' | 'P' => PieceType::Pawn(color),
-            'k' | 'K' => PieceType::King(color),
-            'n' | 'N' => PieceType::Knight(color),
-            'r' | 'R' => PieceType::Rook(color),
-            'q' | 'Q' => PieceType::Queen(color),
-            'b' | 'B' => PieceType::Bishop(color),
-            _ => panic!("not a valid character for chess fen string"),
-        }
+        let piece_type = item.into();
+        Piece::new(piece_type, color, Position::default())
     }
 }
 
-impl fmt::Display for PieceType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let result;
-        match *self {
-            Self::Queen(color) => result = if color == Color::Black { "♛" } else { "♕" },
-
-            Self::Pawn(color) => result = if color == Color::Black { "♟" } else { "♙" },
-
-            Self::Bishop(color) => result = if color == Color::Black { "♝" } else { "♗" },
-
-            Self::King(color) => result = if color == Color::Black { "♚" } else { "♔" },
-
-            Self::Knight(color) => result = if color == Color::Black { "♞" } else { "♘" },
-
-            Self::Rook(color) => result = if color == Color::Black { "♜" } else { "♖" },
+fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
+    match p_type {
+        &PieceType::Queen => {
+            if p_color == &Color::Black {
+                '♛'
+            } else {
+                '♕'
+            }
         }
-        f.pad(result)
+
+        &PieceType::Pawn => {
+            if p_color == &Color::Black {
+                '♟'
+            } else {
+                '♙'
+            }
+        }
+
+        &PieceType::Bishop => {
+            if p_color == &Color::Black {
+                '♝'
+            } else {
+                '♗'
+            }
+        }
+
+        &PieceType::King => {
+            if p_color == &Color::Black {
+                '♚'
+            } else {
+                '♔'
+            }
+        }
+
+        &PieceType::Knight => {
+            if p_color == &Color::Black {
+                '♞'
+            } else {
+                '♘'
+            }
+        }
+
+        &PieceType::Rook => {
+            if p_color == &Color::Black {
+                '♜'
+            } else {
+                '♖'
+            }
+        }
     }
 }
