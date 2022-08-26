@@ -8,15 +8,14 @@ pub enum Directions {
     Down,
     Left,
     Right,
-    UpLeft,
-    UpRight,
-    DownLeft,
-    DownRight,
+    UpLeft,    // diagnol up left
+    UpRight,   //diagnol up right
+    DownLeft,  // diagnol left down
+    DownRight, //diagnol right down
 }
 
-
-impl From<(i32, i32)> for Directions {
-    fn from(item: (i32, i32)) -> Directions {
+impl From<(i8, i8)> for Directions {
+    fn from(item: (i8, i8)) -> Directions {
         match (item.0, item.1) {
             (0, -1) => Directions::Up,
             (0, 1) => Directions::Down,
@@ -30,9 +29,6 @@ impl From<(i32, i32)> for Directions {
         }
     }
 }
-
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum Movment {}
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Color {
@@ -60,6 +56,38 @@ pub enum PieceType {
     King(Color),
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct Position {
+    pub x: i8,
+    pub y: i8,
+}
+impl Position {
+    pub fn new(x: i8, y: i8) -> Self {
+        Position { x, y }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Piece {
+    pub piece_type: PieceType,
+    pub position: Position,
+}
+
+impl Piece {
+    pub fn new(piece_type: PieceType, position: Position) -> Self {
+        Piece {
+            piece_type,
+            position,
+        }
+    }
+}
+
+impl fmt::Display for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.pad(&format!("{}", self.piece_type))
+    }
+}
+
 impl From<char> for PieceType {
     fn from(item: char) -> Self {
         let color: Color = item.into();
@@ -72,12 +100,6 @@ impl From<char> for PieceType {
             'b' | 'B' => PieceType::Bishop(color),
             _ => panic!("not a valid character for chess fen string"),
         }
-    }
-}
-
-impl PieceType {
-    pub fn move_to(&self) {
-        unimplemented!()
     }
 }
 

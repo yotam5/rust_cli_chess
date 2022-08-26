@@ -1,9 +1,12 @@
-use super::piece;
+use super::piece::{self, Position};
+use std::error::Error;
 use std::fmt;
-#[derive(Default)]
 
+type MyResult<T> = Result<T, Box<dyn Error>>;
+
+#[derive(Default)]
 enum Square {
-    Contains(piece::PieceType),
+    Contains(piece::Piece),
     #[default]
     Empty,
 }
@@ -12,25 +15,29 @@ pub struct Board {
     board: [[Square; 8]; 8],
 }
 
+/// load starting position for the chess game
 fn initialize_board(board_array: &mut [[Square; 8]; 8]) {
     let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     load_fen_string_to_board(board_array, &initial_game_position);
 }
 
+/// load fen string to the board
 fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str) {
     for (line_number, line_fen_value) in fen_string.split("/").enumerate() {
-        let mut current_line_index: u8 = 0;
+        let mut current_line_index: usize = 0;
 
         for fen_value in line_fen_value.chars() {
             if fen_value.is_numeric() {
-                let fen_value = fen_value.to_digit(10).unwrap() as u8;
+                let fen_value = fen_value.to_digit(10).unwrap() as usize;
                 for empty_index in current_line_index..fen_value {
-                    board_array[line_number][usize::from(empty_index)] = Square::Empty;
+                    board_array[line_number][empty_index] = Square::Empty;
                 }
                 current_line_index += fen_value - 1;
             } else if fen_value.is_ascii_alphabetic() {
-                let piece: piece::PieceType = fen_value.into();
-                board_array[line_number][usize::from(current_line_index)] = Square::Contains(piece);
+                board_array[line_number][current_line_index] = Square::Contains(piece::Piece::new(
+                    fen_value.into(),
+                    Position::new(line_number as i8, current_line_index as i8),
+                ));
                 current_line_index += 1;
             }
         }
@@ -43,9 +50,10 @@ impl Board {
         initialize_board(&mut board_array);
         Board { board: board_array }
     }
+
 }
 
-impl<'a> fmt::Display for Board {
+impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:>2}", " ").unwrap();
 
