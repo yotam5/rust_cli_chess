@@ -2,7 +2,8 @@ use std::error::Error;
 use super::piece::{self, Position};
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
-fn is_valid_algebric_notation(an_arr: &[u8; 2]) -> bool {
+/// check if algebraic notation is valid
+pub fn is_valid_algebraic_notation(an_arr: &[u8; 2]) -> bool {
     let row = an_arr[0];
     let column = an_arr[1];
 
@@ -10,7 +11,7 @@ fn is_valid_algebric_notation(an_arr: &[u8; 2]) -> bool {
         return false;
     }
 
-    if !(['a', 'b', 'c', 'd', 'f', 'g'].contains(&(row as char))
+    if !(['a', 'b', 'c', 'd', 'e','f', 'g','h'].contains(&(row as char))
         && (column as char).to_digit(10).unwrap() < 9_u32)
     {
         return false;
@@ -19,13 +20,20 @@ fn is_valid_algebric_notation(an_arr: &[u8; 2]) -> bool {
     true
 }
 
-fn parse_algebric_notation(an_arr: &[u8; 2]) -> MyResult<piece::Position> {
-    if is_valid_algebric_notation(an_arr) {
+/// parse algebraic notation to Position on board note the subtraction of 1
+/// for board array indexing that starts with 0
+pub fn parse_algebraic_notation(an_arr: &[u8; 2]) -> MyResult<Position> {
+    if is_valid_algebraic_notation(an_arr) {
         let row = an_arr[0] - ('a' as u8);
-        let column = (an_arr[1] as char).to_digit(10).unwrap();
+        let column = (an_arr[1] as char).to_digit(10).unwrap() - 1;
         return Ok(Position::new(row as i8, column as i8));
     }
-    Err("Invalid algebric notation for piece location")?
-
+    Err("Invalid algebraic notation for piece location")?
 
 }
+
+
+
+
+
+

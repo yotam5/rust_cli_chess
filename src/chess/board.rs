@@ -1,6 +1,8 @@
-use super::piece::{self, Position};
 use std::error::Error;
 use std::fmt;
+use crate::chess::piece::Piece;
+
+use super::piece::{self, Position};
 
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
@@ -51,17 +53,46 @@ impl Board {
         initialize_board(&mut board_array);
         Board { board: board_array }
     }
+
+    pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
+    {
+        if self.empty_at(src)
+        {
+            return false;
+        }
+        true
+    }
+
+    //fn get_value_at(&self) ->
+
+    fn get_square_at(&self, dest: &Position) -> &Square
+    {
+        &self.board[dest.x as usize][dest.y as usize]
+    }
+
+    pub fn empty_at(&self, dest: &Position) -> bool
+    {
+        match self.get_square_at(dest)
+        {
+            Square::Empty => true,
+            Square::Contains(_) => false,
+        }
+    }
+}
+
+pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
+{
+    write!(f, "{:>2}", " ").unwrap();
+
+    for c in 'a'..='h' {
+        write!(f, "{:>2}", c).unwrap();
+    }
 }
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:>2}", " ").unwrap();
-
-        for c in 'a'..='h' {
-            write!(f, "{:>2}", c).unwrap();
-        }
-
-        writeln!(f, "").unwrap();
+        algebraic_notation_letters_formatted(f);
+        write!(f, "{}", "\n").unwrap();
 
         for (row_number, row_value) in self.board.iter().enumerate() {
             write!(f, "{:>2}", 8 - row_number).unwrap();
@@ -75,6 +106,12 @@ impl fmt::Display for Board {
                 }
             }
             writeln!(f, "").unwrap();
+        }
+
+
+        write!(f, "{:>2}", " ").unwrap();
+        for c in 'a'..='h' {
+            write!(f, "{:>2}", c).unwrap();
         }
         write!(f, "")
     }

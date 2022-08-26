@@ -1,5 +1,5 @@
 use core::panic;
-use std::convert::From;
+use std::convert::{From,TryFrom};
 use std::fmt;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -32,12 +32,9 @@ pub enum Directions {
     Left,
     Right,
     UpLeft,
-    // diagnol up left
     UpRight,
-    //diagnol up right
     DownLeft,
-    // diagnol left down
-    DownRight, //diagnol right down
+    DownRight,
 }
 
 impl From<(i8, i8)> for Directions {
@@ -122,7 +119,7 @@ impl From<char> for Piece {
     }
 }
 
-fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
+pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
     match p_type {
         &PieceType::Queen => {
             if p_color == &Color::Black {
