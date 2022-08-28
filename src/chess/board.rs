@@ -1,17 +1,8 @@
-use std::error::Error;
 use std::fmt;
-use crate::chess::piece::Piece;
 
-use super::piece::{self, Position};
+use super::piece::{Position,Piece};
 
-type MyResult<T> = Result<T, Box<dyn Error>>;
-
-#[derive(Default)]
-enum Square {
-    Contains(piece::Piece),
-    #[default]
-    Empty,
-}
+type Square = Option<Piece>;
 
 pub struct Board {
     board: [[Square; 8]; 8],
@@ -20,23 +11,23 @@ pub struct Board {
 /// load starting position for the chess game
 fn initialize_board(board_array: &mut [[Square; 8]; 8]) {
     let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    load_fen_string_to_board(board_array, &initial_game_position);
+    load_fen_string_to_board(board_array, initial_game_position);
 }
 
 /// load fen string to the board
 fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str) {
-    for (line_number, line_fen_value) in fen_string.split("/").enumerate() {
+    for (line_number, line_fen_value) in fen_string.split('/').enumerate() {
         let mut current_line_index: usize = 0;
 
         for fen_value in line_fen_value.chars() {
             if fen_value.is_numeric() {
                 let fen_value = fen_value.to_digit(10).unwrap() as usize;
                 for empty_index in current_line_index..fen_value {
-                    board_array[line_number][empty_index] = Square::Empty;
+                    board_array[line_number][empty_index] = None;
                 }
                 current_line_index += fen_value - 1;
-            } else if fen_value.is_ascii_alphabetic() {
-                board_array[line_number][current_line_index] = Square::Contains(piece::Piece::new(
+            } else if fen_value.is_ascii_alphabetic(){
+                board_array[line_number][current_line_index] = Some(Piece::new(
                     fen_value.into(),
                     fen_value.into(),
                     Position::new(line_number as i8, current_line_index as i8),
@@ -54,9 +45,14 @@ impl Board {
         Board { board: board_array }
     }
 
+    fn square_at(&self, dest: &Position) -> &Square
+    {
+        &self.board[dest.x as usize][dest.y as usize]
+    }
+
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
-        if self.empty_at(src)
+        if !self.square_at(src).is_none()
         {
             return false;
         }
@@ -64,20 +60,6 @@ impl Board {
     }
 
     //fn get_value_at(&self) ->
-
-    fn get_square_at(&self, dest: &Position) -> &Square
-    {
-        &self.board[dest.x as usize][dest.y as usize]
-    }
-
-    pub fn empty_at(&self, dest: &Position) -> bool
-    {
-        match self.get_square_at(dest)
-        {
-            Square::Empty => true,
-            Square::Contains(_) => false,
-        }
-    }
 }
 
 pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
@@ -89,23 +71,28 @@ pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
     }
 }
 
+impl Default for Board
+{
+    fn default() -> Self {
+        Board::new()
+    }
+}
+
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         algebraic_notation_letters_formatted(f);
-        write!(f, "{}", "\n").unwrap();
+        writeln!(f).unwrap();
 
         for (row_number, row_value) in self.board.iter().enumerate() {
             write!(f, "{:>2}", 8 - row_number).unwrap();
 
             for square in row_value {
-                match square {
-                    Square::Empty => write!(f, "{:>2}", "·").unwrap(),
-                    Square::Contains(p) => {
-                        write!(f, "{:>2}", p).unwrap();
-                    }
+                if square.is_none() { write!(f, "{:>2}", "·").unwrap() } else if square.is_some() {
+                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
                 }
             }
-            writeln!(f, "").unwrap();
+
+            writeln!(f).unwrap();
         }
 
 

@@ -1,5 +1,5 @@
 use std::error::Error;
-use super::piece::{self, Position};
+use super::piece::{Position};
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
 /// check if algebraic notation is valid
@@ -12,7 +12,7 @@ pub fn is_valid_algebraic_notation(an_arr: &[u8; 2]) -> bool {
     }
 
     if !(['a', 'b', 'c', 'd', 'e','f', 'g','h'].contains(&(row as char))
-        && (column as char).to_digit(10).unwrap() < 9_u32)
+        && (column as char).to_digit(10).unwrap() <= 8_u32)
     {
         return false;
     }

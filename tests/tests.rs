@@ -18,9 +18,11 @@ fn algebraic_notation_test()
     {
         let k = &[n as u8, c as u8];
         let result = parse_algebraic_notation(&[n as u8, c as u8]);
-        assert_eq!(result.is_err(), true);
+        assert!(result.is_err());
         let result = parse_algebraic_notation(&[c as u8, n as u8]);
-        assert_eq!(result.is_ok(), true);
+        assert!(result.is_ok());
     }
 }
+
+
 
