@@ -1,6 +1,8 @@
 use std::fmt;
+use crate::chess::piece;
 
-use super::piece::{Position,Piece};
+use super::piece::{Position, Piece};
+use super::piece_movement as pm;
 
 type Square = Option<Piece>;
 
@@ -26,11 +28,11 @@ fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str
                     board_array[line_number][empty_index] = None;
                 }
                 current_line_index += fen_value - 1;
-            } else if fen_value.is_ascii_alphabetic(){
+            } else if fen_value.is_ascii_alphabetic() {
                 board_array[line_number][current_line_index] = Some(Piece::new(
                     fen_value.into(),
                     fen_value.into(),
-                    Position::new(line_number as i8, current_line_index as i8),
+                    Position::new(line_number as isize, current_line_index as isize),
                 ));
                 current_line_index += 1;
             }
@@ -45,21 +47,55 @@ impl Board {
         Board { board: board_array }
     }
 
+    /// in normal chess you index positions col row
     fn square_at(&self, dest: &Position) -> &Square
     {
-        &self.board[dest.x as usize][dest.y as usize]
+        &self.board[dest.y as usize][dest.x as usize]
+    }
+
+    fn square_at_mut(&mut self, dest: &Position) -> &mut Square
+    {
+        &mut self.board[dest.y as usize][dest.x as usize]
+    }
+
+    pub fn same_owner(&self, src: &Position, dest: &Position) -> bool
+    {
+        let square_src = self.square_at(src);
+        let square_dest = self.square_at(dest);
+
+        if let (Some(ss), Some(sd)) = (square_src, square_dest)
+        {
+            return ss.p_color == sd.p_color;
+        }
+
+        false
     }
 
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
-        if !self.square_at(src).is_none()
+        if self.square_at(src).is_some()
+            && !self.same_owner(src, dest) //note replace king and rook need fix
         {
-            return false;
+            let piece_type = &self.square_at(src).as_ref().unwrap().p_type;
+            match piece_type
+            {
+                piece::PieceType::Knight =>
+                    {
+                        let res = pm::is_valid_knight_move(src, dest);
+                        if res {
+                            println!("valid move");
+                        }
+                    }
+
+                _ => unimplemented!()
+            }
         }
+
         true
     }
 
-    //fn get_value_at(&self) ->
+
+//fn get_value_at(&self) ->
 }
 
 pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
@@ -81,24 +117,24 @@ impl Default for Board
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         algebraic_notation_letters_formatted(f);
-        writeln!(f).unwrap();
+        writeln!(f)?;
 
         for (row_number, row_value) in self.board.iter().enumerate() {
             write!(f, "{:>2}", 8 - row_number).unwrap();
 
             for square in row_value {
-                if square.is_none() { write!(f, "{:>2}", "·").unwrap() } else if square.is_some() {
+                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
                     write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
                 }
             }
 
-            writeln!(f).unwrap();
+            writeln!(f)?;
         }
 
 
-        write!(f, "{:>2}", " ").unwrap();
+        write!(f, "{:>2}", " ")?;
         for c in 'a'..='h' {
-            write!(f, "{:>2}", c).unwrap();
+            write!(f, "{:>2}", c)?;
         }
         write!(f, "")
     }

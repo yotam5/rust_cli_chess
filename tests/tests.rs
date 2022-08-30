@@ -10,6 +10,29 @@ fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8])
 }
 
 #[test]
+fn same_owner_test()
+{
+    use chess::parse::parse_algebraic_notation;
+    use chess::board::Board;
+    let board = Board::new();
+    let test_data = [
+        ((b'a', b'1'), (b'a', b'2'), true), // white to white
+        ((b'a', b'8'), (b'a', b'7'), true), // black to black
+        ((b'a', b'2'), (b'a', b'3'), false), // white to empty
+        ((b'a', b'7'), (b'a', b'6'), false), //black to empty
+        ((b'a', b'5'), (b'a', b'4'), false), // emtpy to empty
+        ((b'a', b'2'), (b'a', b'7'), false) // white to black
+    ];
+
+    for (src, dest, expected) in test_data
+    {
+        let src_pos = parse_algebraic_notation(&[src.0, src.1]).unwrap();
+        let dest_pos = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        assert_eq!(board.same_owner(&src_pos, &dest_pos), expected);
+    }
+}
+
+#[test]
 fn algebraic_notation_test()
 {
     use chess::parse::*;

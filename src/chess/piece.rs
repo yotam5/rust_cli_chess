@@ -1,5 +1,5 @@
 use core::panic;
-use std::convert::{From,TryFrom};
+use std::convert::{From, TryFrom};
 use std::fmt;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -95,33 +95,27 @@ impl From<char> for PieceType {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Position {
-    pub x: i8,
-    pub y: i8,
+    pub x: isize,
+    pub y: isize,
 }
 
 impl Position {
-    pub fn new(x: i8, y: i8) -> Self {
+    pub fn new(x: isize, y: isize) -> Self {
         Position { x, y }
-    }
-}
-
-impl Default for Position {
-    fn default() -> Self {
-        Position::new(-1, -1)
     }
 }
 
 impl From<char> for Piece {
     fn from(item: char) -> Self {
-        let color: Color = item.into();
+        let color = item.into();
         let piece_type = item.into();
-        Piece::new(piece_type, color, Position::default())
+        Piece::new(piece_type, color, Position::new(0, 0))
     }
 }
 
 pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
     match p_type {
-        &PieceType::Queen => {
+        PieceType::Queen => {
             if p_color == &Color::Black {
                 '♛'
             } else {
@@ -129,7 +123,7 @@ pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
             }
         }
 
-        &PieceType::Pawn => {
+        PieceType::Pawn => {
             if p_color == &Color::Black {
                 '♟'
             } else {
@@ -137,7 +131,7 @@ pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
             }
         }
 
-        &PieceType::Bishop => {
+        PieceType::Bishop => {
             if p_color == &Color::Black {
                 '♝'
             } else {
@@ -145,7 +139,7 @@ pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
             }
         }
 
-        &PieceType::King => {
+        PieceType::King => {
             if p_color == &Color::Black {
                 '♚'
             } else {
@@ -153,7 +147,7 @@ pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
             }
         }
 
-        &PieceType::Knight => {
+        PieceType::Knight => {
             if p_color == &Color::Black {
                 '♞'
             } else {
@@ -161,7 +155,7 @@ pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
             }
         }
 
-        &PieceType::Rook => {
+        PieceType::Rook => {
             if p_color == &Color::Black {
                 '♜'
             } else {

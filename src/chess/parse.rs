@@ -1,5 +1,7 @@
 use std::error::Error;
 use super::piece::{Position};
+// NOTE: CAPLOCK + K is like mouse press
+
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
 /// check if algebraic notation is valid
@@ -11,7 +13,7 @@ pub fn is_valid_algebraic_notation(an_arr: &[u8; 2]) -> bool {
         return false;
     }
 
-    if !(['a', 'b', 'c', 'd', 'e','f', 'g','h'].contains(&(row as char))
+    if !(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].contains(&(row as char))
         && (column as char).to_digit(10).unwrap() <= 8_u32)
     {
         return false;
@@ -24,12 +26,11 @@ pub fn is_valid_algebraic_notation(an_arr: &[u8; 2]) -> bool {
 /// for board array indexing that starts with 0
 pub fn parse_algebraic_notation(an_arr: &[u8; 2]) -> MyResult<Position> {
     if is_valid_algebraic_notation(an_arr) {
-        let row = an_arr[0] - ('a' as u8);
+        let row = an_arr[0] - b'a';
         let column = (an_arr[1] as char).to_digit(10).unwrap() - 1;
-        return Ok(Position::new(row as i8, column as i8));
+        return Ok(Position::new(row as isize, column as isize));
     }
     Err("Invalid algebraic notation for piece location")?
-
 }
 
 
