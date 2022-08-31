@@ -25,33 +25,6 @@ impl fmt::Display for Piece {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum Directions {
-    Up,
-    Down,
-    Left,
-    Right,
-    UpLeft,
-    UpRight,
-    DownLeft,
-    DownRight,
-}
-
-impl From<(i8, i8)> for Directions {
-    fn from(item: (i8, i8)) -> Directions {
-        match (item.0, item.1) {
-            (0, -1) => Directions::Up,
-            (0, 1) => Directions::Down,
-            (1, 0) => Directions::Right,
-            (-1, -1) => Directions::UpLeft,
-            (1, -1) => Directions::UpRight,
-            (1, 1) => Directions::DownRight,
-            (-1, 1) => Directions::DownLeft,
-            (-1, 0) => Directions::Left,
-            _ => unreachable!(),
-        }
-    }
-}
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Color {

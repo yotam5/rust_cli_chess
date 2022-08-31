@@ -1,7 +1,9 @@
 use std::fmt;
-use crate::chess::piece;
+use crate::chess::piece_movement::{Directions, Velocity};
+use std::mem;
+use std::os::unix::raw::uid_t;
 
-use super::piece::{Position, Piece};
+use super::piece::{self, Position, Piece, PieceType};
 use super::piece_movement as pm;
 
 type Square = Option<Piece>;
@@ -74,18 +76,63 @@ impl Board {
 
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
-        self.turns_counter += 1;
         println!("{:?}", self.square_at(src));
+
         if self.square_at(src).is_some()
             && !self.same_owner(src, dest) //note replace king and rook need fix
         {
             let piece_type = &self.square_at(src).as_ref().unwrap().p_type;
-            return match piece_type
+            if !Board::is_valid_move(piece_type, src, dest) || !self.check_dest_path_is_clear(src, dest)
             {
-                piece::PieceType::Knight => pm::is_valid_knight_move(src, dest),
-                _ => unimplemented!()
-            };
+                return false;
+            }
+            println!("path is clear {}", self.check_dest_path_is_clear(src, dest));
+            self.turns_counter += 1;
+            self.board[dest.x as usize][dest.y as usize] = &self.board[src.x as usize][src.y as usize];
+            return true;
         }
+        false
+    }
+
+    pub fn is_valid_move(piece_type: &PieceType, src: &Position, dest: &Position) -> bool
+    {
+        return match piece_type {
+            PieceType::Knight => pm::is_valid_knight_move(src, dest),
+            PieceType::Bishop => pm::is_valid_bishop_move(src, dest),
+            PieceType::Queen => pm::is_valid_queen_move(src, dest),
+            PieceType::Rook => pm::is_valid_rook_move(src, dest),
+            _ => unimplemented!()
+        };
+    }
+
+    fn valid_position_on_board(pos: &Position) -> bool
+    {
+        pos.x >= 0 && pos.y >= 0
+    }
+
+    pub fn check_dest_path_is_clear(&self, src: &Position, dest: &Position) -> bool
+    {
+        assert!(Board::valid_position_on_board(src));
+        assert!(Board::valid_position_on_board(dest));
+
+        let velocity = Velocity::new(src, dest);
+        let mut curr_pos = Position::new(src.x, src.y);
+
+        for _ in 0..8
+        {
+            curr_pos.x += velocity.x;
+            curr_pos.y += velocity.y;
+            assert!(Board::valid_position_on_board(&curr_pos));
+            if self.square_at(&curr_pos).is_some() {
+                return false;
+            }
+
+            if &curr_pos == dest
+            {
+                break;
+            }
+        }
+
         true
     }
 
