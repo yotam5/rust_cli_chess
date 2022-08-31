@@ -8,7 +8,7 @@ type Square = Option<Piece>;
 
 pub struct Board {
     board: [[Square; 8]; 8],
-
+    turns_counter: usize,
 }
 
 /// load starting position for the chess game
@@ -30,7 +30,7 @@ fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str
                 }
                 current_line_index += fen_value - 1;
             } else if fen_value.is_ascii_alphabetic() {
-                board_array[ 7 - line_number][current_line_index] = Some(Piece::new(
+                board_array[7 - line_number][current_line_index] = Some(Piece::new(
                     fen_value.into(),
                     fen_value.into(),
                     Position::new((7 - line_number) as isize, current_line_index as isize),
@@ -45,7 +45,7 @@ impl Board {
     pub fn new() -> Self {
         let mut board_array: [[Square; 8]; 8] = Default::default();
         initialize_board(&mut board_array);
-        Board { board: board_array }
+        Board { board: board_array, turns_counter: 0 }
     }
 
     /// in normal chess you index positions col row
@@ -74,7 +74,8 @@ impl Board {
 
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
-        println!("{:?}",self.square_at(src));
+        self.turns_counter += 1;
+        println!("{:?}", self.square_at(src));
         if self.square_at(src).is_some()
             && !self.same_owner(src, dest) //note replace king and rook need fix
         {
@@ -83,15 +84,50 @@ impl Board {
             {
                 piece::PieceType::Knight => pm::is_valid_knight_move(src, dest),
                 _ => unimplemented!()
-            }
+            };
         }
-
         true
     }
 
+    pub fn output_black_front(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f)?;
+        //param - (row_number % 8) + 1)
+        let black_front = |row_number: &usize| -> usize{
+            row_number + 1
+        };
 
-//fn get_value_at(&self) ->
+        for (row_number, row_value) in self.board.iter().enumerate() {
+            write!(f, "{:>2}", black_front(&row_number)).unwrap();
+
+            for square in row_value {
+                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
+                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
+                }
+            }
+
+            writeln!(f)?;
+        }
+        Ok(())
+    }
+
+    pub fn output_white_front(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f)?;
+        //param - (row_number % 8) + 1)
+        for (row_number, row_value) in self.board.iter().enumerate().rev() {
+            write!(f, "{:>2}", row_number + 1).unwrap();
+
+            for square in row_value {
+                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
+                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
+                }
+            }
+
+            writeln!(f)?;
+        }
+        Ok(())
+    }
 }
+
 
 pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
 {
@@ -112,25 +148,15 @@ impl Default for Board
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         algebraic_notation_letters_formatted(f);
-        writeln!(f)?;
 
-        for (row_number, row_value) in self.board.iter().enumerate() {
-            write!(f, "{:>2}", 8 - row_number).unwrap();
-
-            for square in row_value {
-                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
-                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
-                }
-            }
-
-            writeln!(f)?;
+        if self.turns_counter % 2 == 0
+        {
+            self.output_white_front(f)?;
+        } else {
+            self.output_black_front(f)?;
         }
 
-
-        write!(f, "{:>2}", " ")?;
-        for c in 'a'..='h' {
-            write!(f, "{:>2}", c)?;
-        }
+        algebraic_notation_letters_formatted(f);
         write!(f, "")
     }
 }

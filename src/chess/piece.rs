@@ -1,5 +1,5 @@
 use core::panic;
-use std::convert::{From, TryFrom};
+use std::convert::{From};
 use std::fmt;
 
 #[derive(Debug, Eq, PartialEq)]
