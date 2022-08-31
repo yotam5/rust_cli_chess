@@ -2,4 +2,4 @@
 pub mod board;
 pub mod piece;
 pub mod parse;
-mod piece_movement;
+pub mod piece_movement;

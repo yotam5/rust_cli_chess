@@ -8,6 +8,7 @@ type Square = Option<Piece>;
 
 pub struct Board {
     board: [[Square; 8]; 8],
+
 }
 
 /// load starting position for the chess game
@@ -25,14 +26,14 @@ fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str
             if fen_value.is_numeric() {
                 let fen_value = fen_value.to_digit(10).unwrap() as usize;
                 for empty_index in current_line_index..fen_value {
-                    board_array[line_number][empty_index] = None;
+                    board_array[7 - line_number][empty_index] = None;
                 }
                 current_line_index += fen_value - 1;
             } else if fen_value.is_ascii_alphabetic() {
-                board_array[line_number][current_line_index] = Some(Piece::new(
+                board_array[ 7 - line_number][current_line_index] = Some(Piece::new(
                     fen_value.into(),
                     fen_value.into(),
-                    Position::new(line_number as isize, current_line_index as isize),
+                    Position::new((7 - line_number) as isize, current_line_index as isize),
                 ));
                 current_line_index += 1;
             }
@@ -73,20 +74,14 @@ impl Board {
 
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
+        println!("{:?}",self.square_at(src));
         if self.square_at(src).is_some()
             && !self.same_owner(src, dest) //note replace king and rook need fix
         {
             let piece_type = &self.square_at(src).as_ref().unwrap().p_type;
-            match piece_type
+            return match piece_type
             {
-                piece::PieceType::Knight =>
-                    {
-                        let res = pm::is_valid_knight_move(src, dest);
-                        if res {
-                            println!("valid move");
-                        }
-                    }
-
+                piece::PieceType::Knight => pm::is_valid_knight_move(src, dest),
                 _ => unimplemented!()
             }
         }

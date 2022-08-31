@@ -1,4 +1,7 @@
 use cte::chess;
+use cte::chess::parse::parse_algebraic_notation;
+use cte::chess::piece::Position;
+use cte::chess::piece_movement::{is_valid_knight_move, is_valid_rook_move};
 
 // Todo: need to add test for conversions char to Piece, char to Color and char to PieceType
 
@@ -39,13 +42,70 @@ fn algebraic_notation_test()
     let (num_arr, char_arr) = generate_algebraic_notation_arrays();
     for (n, c) in num_arr.into_iter().zip(char_arr.into_iter())
     {
-        let k = &[n as u8, c as u8];
         let result = parse_algebraic_notation(&[n as u8, c as u8]);
         assert!(result.is_err());
         let result = parse_algebraic_notation(&[c as u8, n as u8]);
         assert!(result.is_ok());
     }
 }
+
+#[test]
+fn test_knight_moves()
+{
+    let src_position = (b'e', b'4');
+    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+    let valid_destinations = [
+        (b'c', b'3'), (b'c', b'5'), (b'd', b'2'),
+        (b'd', b'6'), (b'f', b'2'), (b'f', b'6'),
+        (b'g', b'3'), (b'g', b'5')
+    ];
+
+    for dest in valid_destinations
+    {
+        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        assert_eq!(is_valid_knight_move(&src_position, &dest_position), true);
+    }
+}
+
+fn test_rook_moves()
+{
+    let src_position = (b'e', b'4');
+    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+
+    let valid_destinations = [
+        (b'a', b'4'), (b'e', b'1'), (b'h', b'4'), (b'e', b'8')
+    ];
+
+    for dest in valid_destinations
+    {
+        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        assert_eq!(is_valid_knight_move(&src_position, &dest_position), true);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
