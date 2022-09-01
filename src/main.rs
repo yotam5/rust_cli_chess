@@ -3,6 +3,7 @@ use chess::board::Board;
 use chess::parse;
 use chess::piece::Position;
 use cte::chess;
+use cte::chess::board_manager::BoardManager;
 
 fn input_read() -> [u8; 2]
 {
@@ -38,9 +39,9 @@ fn get_move() -> Position
 }
 
 fn main() {
-    let mut board = Board::new();
+    let mut board = BoardManager::new();
 
-    clear_screen();
+    
     loop {
         //println!("{}", &board);
         println!("selected piece position");

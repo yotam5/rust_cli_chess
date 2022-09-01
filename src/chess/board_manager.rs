@@ -4,8 +4,8 @@ use super::piece::{Position, Piece, PieceType};
 use super::piece_movement as pm;
 use super::board::{Board,Square};
 
-pub struct BoardManager {
-    board: Board,
+pub struct BoardManager<'a> {
+    pub board: &'a Board<'a>,
     turns_counter: usize,
 }
 
@@ -41,9 +41,9 @@ fn load_fen_string_to_board(board_array: &mut Board, fen_string: &str) {
     }
 }
 
-impl BoardManager {
+impl<'a> BoardManager<'a> {
     pub fn new() -> Self {
-        let mut board = Board::new();
+        let mut board= Board::new();
         initialize_board(&mut board);
         BoardManager { board, turns_counter: 0 }
     }
@@ -169,7 +169,7 @@ pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
     }
 }
 
-impl fmt::Display for BoardManager {
+impl<'a> fmt::Display for BoardManager<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         algebraic_notation_letters_formatted(f);
 

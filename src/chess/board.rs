@@ -1,4 +1,5 @@
 use std::ops::{Index, IndexMut};
+use std::iter::Iterator;
 use super::piece::Piece;
 
 const BOARD_WIDTH: usize = 8;
@@ -7,9 +8,10 @@ const BOARD_HEIGHT: usize = 8;
 
 pub type Square = Option<Piece>;
 
-pub struct Board([Square; 64]);
+#[derive(Debug)]
+pub struct Board<'a>([Square; 64]);
 
-impl Board
+impl<'a> Board<'a>
 {
     pub fn new() -> Self
     {
@@ -24,14 +26,14 @@ impl Board
 
 }
 
-impl Default for Board
+impl<'a> Default for Board<'a>
 {
     fn default() -> Self {
         Board::new()
     }
 }
 
-impl Index<(usize, usize)> for Board
+impl<'a> Index<(usize, usize)> for Board<'a>
 {
     type Output = Square;
 
@@ -42,24 +44,33 @@ impl Index<(usize, usize)> for Board
     }
 }
 
-impl Index<(usize, usize)> for &Board
+impl<'a> Iterator for Board<'a>
+{
+    type Item = &'a [Square];
+
+
+} 
+
+impl<'a> Index<(usize, usize)> for &Board<'a>
 {
     type Output = Square;
 
     fn index(&self, (row, column): (usize, usize)) -> &Self::Output
     {
-        self.index((row,column))
+        assert!(Board::valid_index((row, column)));
+        &self.0[BOARD_WIDTH * row + column]
     }
 }
 
-impl IndexMut<(usize, usize)> for &Board
+impl<'a> IndexMut<(usize, usize)> for &Board<'a>
 {
     fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
+        assert!(Board::valid_index((row, column)));
         self.index_mut((row,column))
     }
 }
 
-impl IndexMut<(usize, usize)> for Board
+impl<'a> IndexMut<(usize, usize)> for Board<'a>
 {
     fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
         assert!(Board::valid_index((row, column)));
