@@ -42,12 +42,12 @@ fn main() {
 
     clear_screen();
     loop {
-        println!("{}", &board);
+        //println!("{}", &board);
         println!("selected piece position");
         let move_src = get_move();
         println!("selected piece destination");
         let move_dest = get_move();
-        board.handle_move(&move_src, &move_dest);
+        //board.handle_move(&move_src, &move_dest);
 //        clear_screen();
     }
 }

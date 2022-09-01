@@ -1,188 +1,27 @@
-use std::fmt;
-use crate::chess::piece_movement::{Directions, Velocity};
-use std::mem;
-use std::os::unix::raw::uid_t;
+use std::ops::{Index, IndexMut};
+use super::piece::Piece;
 
-use super::piece::{self, Position, Piece, PieceType};
-use super::piece_movement as pm;
-
-type Square = Option<Piece>;
-
-pub struct Board {
-    board: [[Square; 8]; 8],
-    turns_counter: usize,
-}
-
-/// load starting position for the chess game
-fn initialize_board(board_array: &mut [[Square; 8]; 8]) {
-    let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    load_fen_string_to_board(board_array, initial_game_position);
-}
-
-/// load fen string to the board
-fn load_fen_string_to_board(board_array: &mut [[Square; 8]; 8], fen_string: &str) {
-    for (line_number, line_fen_value) in fen_string.split('/').enumerate() {
-        let mut current_line_index: usize = 0;
-
-        for fen_value in line_fen_value.chars() {
-            if fen_value.is_numeric() {
-                let fen_value = fen_value.to_digit(10).unwrap() as usize;
-                for empty_index in current_line_index..fen_value {
-                    board_array[7 - line_number][empty_index] = None;
-                }
-                current_line_index += fen_value - 1;
-            } else if fen_value.is_ascii_alphabetic() {
-                board_array[7 - line_number][current_line_index] = Some(Piece::new(
-                    fen_value.into(),
-                    fen_value.into(),
-                    Position::new((7 - line_number) as isize, current_line_index as isize),
-                ));
-                current_line_index += 1;
-            }
-        }
-    }
-}
-
-impl Board {
-    pub fn new() -> Self {
-        let mut board_array: [[Square; 8]; 8] = Default::default();
-        initialize_board(&mut board_array);
-        Board { board: board_array, turns_counter: 0 }
-    }
-
-    /// in normal chess you index positions col row
-    fn square_at(&self, dest: &Position) -> &Square
-    {
-        &self.board[dest.y as usize][dest.x as usize]
-    }
-
-    fn square_at_mut(&mut self, dest: &Position) -> &mut Square
-    {
-        &mut self.board[dest.y as usize][dest.x as usize]
-    }
-
-    pub fn same_owner(&self, src: &Position, dest: &Position) -> bool
-    {
-        let square_src = self.square_at(src);
-        let square_dest = self.square_at(dest);
-
-        if let (Some(ss), Some(sd)) = (square_src, square_dest)
-        {
-            return ss.p_color == sd.p_color;
-        }
-
-        false
-    }
-
-    pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
-    {
-        println!("{:?}", self.square_at(src));
-
-        if self.square_at(src).is_some()
-            && !self.same_owner(src, dest) //note replace king and rook need fix
-        {
-            let piece_type = &self.square_at(src).as_ref().unwrap().p_type;
-            if !Board::is_valid_move(piece_type, src, dest) || !self.check_dest_path_is_clear(src, dest)
-            {
-                return false;
-            }
-            println!("path is clear {}", self.check_dest_path_is_clear(src, dest));
-            self.turns_counter += 1;
-            self.board[dest.x as usize][dest.y as usize] = &self.board[src.x as usize][src.y as usize];
-            return true;
-        }
-        false
-    }
-
-    pub fn is_valid_move(piece_type: &PieceType, src: &Position, dest: &Position) -> bool
-    {
-        return match piece_type {
-            PieceType::Knight => pm::is_valid_knight_move(src, dest),
-            PieceType::Bishop => pm::is_valid_bishop_move(src, dest),
-            PieceType::Queen => pm::is_valid_queen_move(src, dest),
-            PieceType::Rook => pm::is_valid_rook_move(src, dest),
-            _ => unimplemented!()
-        };
-    }
-
-    fn valid_position_on_board(pos: &Position) -> bool
-    {
-        pos.x >= 0 && pos.y >= 0
-    }
-
-    pub fn check_dest_path_is_clear(&self, src: &Position, dest: &Position) -> bool
-    {
-        assert!(Board::valid_position_on_board(src));
-        assert!(Board::valid_position_on_board(dest));
-
-        let velocity = Velocity::new(src, dest);
-        let mut curr_pos = Position::new(src.x, src.y);
-
-        for _ in 0..8
-        {
-            curr_pos.x += velocity.x;
-            curr_pos.y += velocity.y;
-            assert!(Board::valid_position_on_board(&curr_pos));
-            if self.square_at(&curr_pos).is_some() {
-                return false;
-            }
-
-            if &curr_pos == dest
-            {
-                break;
-            }
-        }
-
-        true
-    }
-
-    pub fn output_black_front(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f)?;
-        //param - (row_number % 8) + 1)
-        let black_front = |row_number: &usize| -> usize{
-            row_number + 1
-        };
-
-        for (row_number, row_value) in self.board.iter().enumerate() {
-            write!(f, "{:>2}", black_front(&row_number)).unwrap();
-
-            for square in row_value {
-                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
-                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
-                }
-            }
-
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-
-    pub fn output_white_front(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f)?;
-        //param - (row_number % 8) + 1)
-        for (row_number, row_value) in self.board.iter().enumerate().rev() {
-            write!(f, "{:>2}", row_number + 1).unwrap();
-
-            for square in row_value {
-                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
-                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
-                }
-            }
-
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
+const BOARD_WIDTH: usize = 8;
+const BOARD_HEIGHT: usize = 8;
 
 
-pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
+pub type Square = Option<Piece>;
+
+pub struct Board([Square; 64]);
+
+impl Board
 {
-    write!(f, "{:>2}", " ").unwrap();
+    pub fn new() -> Self
+    {
 
-    for c in 'a'..='h' {
-        write!(f, "{:>2}", c).unwrap();
+        Board([Square::None; 64])
     }
+
+    fn valid_index((row, column): (usize, usize)) -> bool
+    {
+        row <= BOARD_WIDTH && column <= BOARD_HEIGHT
+    }
+
 }
 
 impl Default for Board
@@ -192,18 +31,38 @@ impl Default for Board
     }
 }
 
-impl fmt::Display for Board {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        algebraic_notation_letters_formatted(f);
+impl Index<(usize, usize)> for Board
+{
+    type Output = Square;
 
-        if self.turns_counter % 2 == 0
-        {
-            self.output_white_front(f)?;
-        } else {
-            self.output_black_front(f)?;
-        }
+    fn index(&self, (row, column): (usize, usize)) -> &Self::Output
+    {
+        assert!(Board::valid_index((row, column)));
+        &self.0[BOARD_WIDTH * row + column]
+    }
+}
 
-        algebraic_notation_letters_formatted(f);
-        write!(f, "")
+impl Index<(usize, usize)> for &Board
+{
+    type Output = Square;
+
+    fn index(&self, (row, column): (usize, usize)) -> &Self::Output
+    {
+        self.index((row,column))
+    }
+}
+
+impl IndexMut<(usize, usize)> for &Board
+{
+    fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
+        self.index_mut((row,column))
+    }
+}
+
+impl IndexMut<(usize, usize)> for Board
+{
+    fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
+        assert!(Board::valid_index((row, column)));
+        &mut self.0[BOARD_WIDTH * row + column]
     }
 }
