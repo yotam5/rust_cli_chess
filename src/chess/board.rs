@@ -1,79 +1,98 @@
-use std::ops::{Index, IndexMut};
-use std::iter::Iterator;
 use super::piece::Piece;
+use std::iter::{Iterator,IntoIterator};
+use std::ops::{Index, IndexMut};
 
 const BOARD_WIDTH: usize = 8;
 const BOARD_HEIGHT: usize = 8;
 
-
 pub type Square = Option<Piece>;
 
 #[derive(Debug)]
-pub struct Board<'a>([Square; 64]);
+pub struct Board {
+    board_array: [Square; BOARD_HEIGHT  * BOARD_HEIGHT], 
+    index: usize,
+}
 
-impl<'a> Board<'a>
+pub struct IterBoard<'a>
 {
-    pub fn new() -> Self
-    {
+    inner: &'a ,
+    index: usize,
+}
 
-        Board([Square::None; 64])
+impl<'a> Iterator for IterBoard<'a> {
+    type Item = &'a Square;
+
+    fn next(&mut self) -> Option<Self::Item> {
+       if self.index >= self.inner.len()
+       {
+        return None
+       } 
+
+       self.inner
+       
+    }
+}
+
+
+impl Default for Board {
+    fn default() -> Self {
+        Board {
+            board_array: [Square::None; 64],
+            index: 0,
+        }
+    }
+}
+
+impl Board {
+    pub fn new() -> Self {
+        Board::default()
     }
 
-    fn valid_index((row, column): (usize, usize)) -> bool
-    {
+    fn valid_index((row, column): (usize, usize)) -> bool {
         row <= BOARD_WIDTH && column <= BOARD_HEIGHT
     }
-
 }
 
-impl<'a> Default for Board<'a>
-{
-    fn default() -> Self {
-        Board::new()
-    }
-}
-
-impl<'a> Index<(usize, usize)> for Board<'a>
-{
+/// implement indexing the board using [(row,column)] notation
+impl Index<(usize, usize)> for Board {
     type Output = Square;
 
-    fn index(&self, (row, column): (usize, usize)) -> &Self::Output
-    {
+    fn index(&self, (row, column): (usize, usize)) -> &Self::Output {
         assert!(Board::valid_index((row, column)));
-        &self.0[BOARD_WIDTH * row + column]
+        &self.board_array[BOARD_WIDTH * row + column]
     }
 }
 
-impl<'a> Iterator for Board<'a>
-{
-    type Item = &'a [Square];
+impl Iterator for Board {
+    type Item = Square;
 
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.board_array[0])
+    }
+}
 
-} 
-
-impl<'a> Index<(usize, usize)> for &Board<'a>
-{
+/// implement the same as Index but for board reference
+impl Index<(usize, usize)> for &Board {
     type Output = Square;
 
-    fn index(&self, (row, column): (usize, usize)) -> &Self::Output
-    {
+    fn index(&self, (row, column): (usize, usize)) -> &Self::Output {
         assert!(Board::valid_index((row, column)));
-        &self.0[BOARD_WIDTH * row + column]
+        &self.board_array[BOARD_WIDTH * row + column]
     }
 }
 
-impl<'a> IndexMut<(usize, usize)> for &Board<'a>
-{
-    fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
+/*impl IndexMut<(usize, usize)> for &Board {
+    fn index_mut(&'a mut self, (row, column): (usize, usize)) -> &'a mut Self::Output {
         assert!(Board::valid_index((row, column)));
-        self.index_mut((row,column))
-    }
-}
+        //self.index_mut((row, column)) ///!ERROR: RCURSIVE BRUH
 
-impl<'a> IndexMut<(usize, usize)> for Board<'a>
-{
+}
+*/
+
+/// implement the same as Index but as mutable
+impl IndexMut<(usize, usize)> for Board {
     fn index_mut(&mut self, (row, column): (usize, usize)) -> &mut Self::Output {
         assert!(Board::valid_index((row, column)));
-        &mut self.0[BOARD_WIDTH * row + column]
+        &mut self.board_array[BOARD_HEIGHT * row + column]
     }
 }
