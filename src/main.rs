@@ -35,7 +35,7 @@ fn get_move() -> Position {
 fn main() {
     let mut board = BoardManager::new();
     let mut bb = Board::new();
-    
+
     println!("jesus");
     println!("{:?}", &bb);
     let piece = Piece::new(
@@ -44,12 +44,18 @@ fn main() {
         Position::new(1, 2),
     );
     bb[(1, 1)] = Square::Some(piece);
+
     println!();
     println!("{:?}", &bb);
 
-    for item in &bb {
-        println!("{:?}", item);
+    println!("\n now for a normal loop\n");
+    for i in &bb {
+        println!("{:?}", i);
     }
+
+    /*for row in bb.iter() {
+        println!("{:?}", &row);
+    }*/
     /*loop {
             //println!("{}", &board);
             println!("selected piece position");

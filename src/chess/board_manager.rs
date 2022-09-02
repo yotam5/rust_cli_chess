@@ -2,7 +2,7 @@ use std::fmt;
 use super::piece_movement::{Directions,Velocity};
 use super::piece::{Position, Piece, PieceType};
 use super::piece_movement as pm;
-use super::board::{Board,Square};
+use super::board::{Board};
 
 pub struct BoardManager {
     pub board: Board,
