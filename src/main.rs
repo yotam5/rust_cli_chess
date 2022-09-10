@@ -5,7 +5,8 @@ use cte::chess::board_manager::BoardManager;
 use cte::chess::piece::Piece;
 use cte::chess::{self, board::Square};
 use std::io::{self, BufReader, Read};
-
+use std::slice::SliceIndex;
+use std::array::
 fn input_read() -> [u8; 2] {
     let stdin = io::stdin();
     let mut input: [u8; 2] = Default::default();
@@ -36,6 +37,7 @@ fn main() {
     let mut board = BoardManager::new();
     let mut bb = Board::new();
 
+    let mut my_str : String= "aabb".to_string();
     println!("jesus");
     println!("{:?}", &bb);
     let piece = Piece::new(
@@ -44,6 +46,8 @@ fn main() {
         Position::new(1, 2),
     );
     bb[(1, 1)] = Square::Some(piece);
+
+    let q: [i32;3] = [1,2,3];
 
     println!();
     println!("{:?}", &bb);
