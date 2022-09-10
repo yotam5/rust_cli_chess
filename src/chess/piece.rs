@@ -78,6 +78,7 @@ impl Position {
     }
 }
 
+
 impl From<char> for Piece {
     fn from(item: char) -> Self {
         let color = item.into();

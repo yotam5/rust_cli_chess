@@ -1,9 +1,6 @@
 use cte::chess;
 use cte::chess::parse::parse_algebraic_notation;
-use cte::chess::piece::Position;
 use cte::chess::piece_movement::{is_valid_knight_move, is_valid_rook_move};
-
-// Todo: need to add test for conversions char to Piece, char to Color and char to PieceType
 
 fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8])
 {
@@ -16,8 +13,8 @@ fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8])
 fn same_owner_test()
 {
     use chess::parse::parse_algebraic_notation;
-    use chess::board::Board;
-    let board = Board::new();
+    use chess::board_manager::BoardManager;
+    let board = BoardManager::new();
     let test_data = [
         ((b'a', b'1'), (b'a', b'2'), true), // white to white
         ((b'a', b'8'), (b'a', b'7'), true), // black to black
@@ -67,6 +64,7 @@ fn test_knight_moves()
     }
 }
 
+#[test]
 fn test_rook_moves()
 {
     let src_position = (b'e', b'4');
@@ -79,7 +77,7 @@ fn test_rook_moves()
     for dest in valid_destinations
     {
         let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        assert_eq!(is_valid_knight_move(&src_position, &dest_position), true);
+        assert!(is_valid_rook_move(&src_position, &dest_position));
     }
 }
 

@@ -1,14 +1,68 @@
 use std::fmt;
-use super::piece_movement::{Directions,Velocity};
-use super::piece::{Position, Piece, PieceType};
+
+use array2ds::array2d::{Array2d, GridIdx};
+
+use super::piece::{Color, Piece, PieceType, Position};
+use super::piece_movement::{Directions, Velocity};
 use super::piece_movement as pm;
-use super::board::{Board};
+
+struct BoardSizeInfo();
+
+impl BoardSizeInfo
+{
+    pub fn row_count() -> usize { 8_usize }
+    pub fn column_count() -> usize { 8_usize }
+}
+
+type Board = Array2d<Square>;
+
+#[derive(Debug)]
+struct Square
+{
+    square_color: Color,
+    piece_on_square: Option<Piece>,
+}
+
+impl Square
+{
+    pub fn new_empty() -> Self
+    {
+        Square {
+            square_color: Color::White,
+            piece_on_square: None,
+        }
+    }
+
+    pub fn new_contains(piece_info: Piece) -> Self
+    {
+        Square {
+            square_color: Color::White,
+            piece_on_square: Some(piece_info),
+        }
+    }
+}
+
+impl Default for Square
+{
+    fn default() -> Self {
+        Square::new_empty()
+    }
+}
 
 pub struct BoardManager {
-    pub board: Board,
+    board: Board,
     turns_counter: usize,
 }
 
+impl GridIdx for Position {
+    fn no_row(&self) -> usize {
+        self.x as usize
+    }
+
+    fn no_column(&self) -> usize {
+        self.y as usize
+    }
+}
 
 /// load starting position for the chess game
 fn initialize_board(board_array: &mut Board) {
@@ -25,89 +79,103 @@ fn load_fen_string_to_board(board_array: &mut Board, fen_string: &str) {
             if fen_value.is_numeric() {
                 let fen_value = fen_value.to_digit(10).unwrap() as usize;
                 for empty_index in current_line_index..fen_value {
-                    board_array[(7 - line_number, empty_index)] = None;
+                    board_array[(7 - line_number, empty_index)] = Square::new_empty();
                 }
                 current_line_index += fen_value - 1;
             } else if fen_value.is_ascii_alphabetic() {
                 board_array
-                    [(7 - line_number, current_line_index)] = Some(Piece::new(
-                    fen_value.into(),
-                    fen_value.into(),
-                    Position::new((7 - line_number) as isize, current_line_index as isize),
-                ));
+                    [(7 - line_number, current_line_index)] =
+                    Square::new_contains(
+                        Piece::new(
+                            fen_value.into(),
+                            fen_value.into(),
+                            Position::new((7 - line_number) as isize, current_line_index as isize),
+                        ));
                 current_line_index += 1;
             }
         }
     }
 }
 
+impl Default for BoardManager
+{
+    fn default() -> Self {
+        let mut board = Board::filled_with_default(BoardSizeInfo::row_count(),
+                                                   BoardSizeInfo::column_count());
+        initialize_board(&mut board);
+        BoardManager { board, turns_counter: 0 }
+    }
+}
+
 impl BoardManager {
     pub fn new() -> Self {
-        let mut board= Board::new();
-        initialize_board(&mut board);
-        BoardManager {board, turns_counter: 0 }
+        BoardManager::default()
     }
 
+    /// check if two positions have the same owner
     pub fn same_owner(&self, src: &Position, dest: &Position) -> bool
     {
-        let square_src = self.board[src.into()];
-        let square_dest = self.board[(*dest).into()];
+        let square_src = &self.board[*src];
+        let square_dest = &self.board[*dest];
 
-        if let (Some(ss), Some(sd)) = (square_src, square_dest)
+        if let [Some(p_source), Some(p_dest)] =
+        [square_src.piece_on_square, square_dest.piece_on_square]
         {
-            return ss.p_color == sd.p_color;
+            return p_source.p_color == p_dest.p_color;
         }
 
         false
     }
 
+    /// handle a chess move and  return bool if performed or not
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
+        let piece_source = self.board[*src].piece_on_square;
+        let piece_dest = self.board[*dest].piece_on_square;
 
-        /*if self.square_at(src).is_some()
-            && !self.same_owner(src, dest) //note replace king and rook need fix
+        let source_is_valid = piece_source.is_some();
+        let dest_is_valid = !self.same_owner(src,dest);
+
+        if !source_is_valid || !dest_is_valid {
+            return false;
+        }
+        if !(BoardManager::is_valid_move(&piece_source.unwrap().p_type, src, dest) &&
+            self.check_dest_path_is_clear(src, dest))
         {
-            let piece_type = &self.square_at(src).as_ref().unwrap().p_type;
-            if !Board::is_valid_move(piece_type, src, dest) || !self.check_dest_path_is_clear(src, dest)
-            {
-                return false;
-            }
-            println!("path is clear {}", self.check_dest_path_is_clear(src, dest));
-            self.turns_counter += 1;
+            return false;
+        }
 
-            //mem::swap(k,w);
-            return true;
-        }*/
-        false
+        //println!("selected {:?} {:?}",&piece_source,&piece_dest);
+        /*println!("valid move: {} path_clear: {} source_valid: {} dest_valid: {}", &is_valid_move, &path_is_clear,
+                 &source_is_valid, &dest_is_valid);*/
+        self.turns_counter += 1;
+        true
     }
 
+    /// check that the move is valid, if piece dest is legal movement if not interrupted by anything
     pub fn is_valid_move(piece_type: &PieceType, src: &Position, dest: &Position) -> bool
     {
-        return match piece_type {
+        match piece_type {
             PieceType::Knight => pm::is_valid_knight_move(src, dest),
             PieceType::Bishop => pm::is_valid_bishop_move(src, dest),
             PieceType::Queen => pm::is_valid_queen_move(src, dest),
             PieceType::Rook => pm::is_valid_rook_move(src, dest),
             _ => unimplemented!()
-        };
+        }
     }
 
-    fn valid_position_on_board(pos: &Position) -> bool
-    {
-        pos.x >= 0 && pos.y >= 0
-    }
-
+   /// check that the movement path of the  piece is clear, not blocked
     pub fn check_dest_path_is_clear(&self, src: &Position, dest: &Position) -> bool
     {
         let velocity = Velocity::new(src, dest);
         let mut curr_pos = Position::new(src.x, src.y);
 
-        for _ in 0..8
+        for _ in 0..BoardSizeInfo::row_count()
         {
             curr_pos.x += velocity.x;
             curr_pos.y += velocity.y;
             //assert!(Board::valid_position_on_board(&curr_pos));
-            if self.board[curr_pos.into()].is_some(){
+            if self.board[curr_pos].piece_on_square.is_some() {
                 return false;
             }
 
@@ -120,46 +188,50 @@ impl BoardManager {
         true
     }
 
+    /// display the black in the front
     pub fn output_black_front(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f)?;
-        //param - (row_number % 8) + 1)
-        let black_front = |row_number: &usize| -> usize{
-            row_number + 1
-        };
 
-        /*for (row_number, row_value) in self.board.iter().enumerate() {
-            write!(f, "{:>2}", black_front(&row_number)).unwrap();
+        for (row_number, row_value) in self.board.iter_rows().enumerate() {
+            write!(f, "{:>2}", row_number + 1)?;
 
-            for square in row_value {
-                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
-                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
+            for square in row_value.iter() {
+                match square.piece_on_square
+                {
+                    Some(piece) => write!(f, "{:>2}", piece)?,
+                    None => write!(f, "{:>2}", "·")?,
                 }
             }
 
             writeln!(f)?;
-        }*/
+        }
         Ok(())
     }
 
+    /// display white in the front
     pub fn output_white_front(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f)?;
-        //param - (row_number % 8) + 1)
-        /*for (row_number, row_value) in self.board.iter().enumerate().rev() {
-            write!(f, "{:>2}", row_number + 1).unwrap();
 
-            for square in row_value {
-                if square.is_none() { write!(f, "{:>2}", "·")? } else if square.is_some() {
-                    write!(f, "{:>2}", square.as_ref().unwrap()).unwrap();
+        for (row_number, row_value) in self.board.iter_rows().rev().enumerate()
+        {
+            write!(f, "{:>2}", BoardSizeInfo::row_count() - row_number).unwrap();
+
+            for square in row_value
+            {
+                match square.piece_on_square
+                {
+                    Some(piece) => write!(f, "{:>2}", piece)?,
+                    None => write!(f, "{:>2}", "·")?,
                 }
             }
 
             writeln!(f)?;
-        }*/
+        }
         Ok(())
     }
 }
 
-
+/// format algebraic notation alphabetic
 pub fn algebraic_notation_letters_formatted(f: &mut fmt::Formatter)
 {
     write!(f, "{:>2}", " ").unwrap();
