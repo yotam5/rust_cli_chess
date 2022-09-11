@@ -25,7 +25,6 @@ impl fmt::Display for Piece {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Color {
     Black,

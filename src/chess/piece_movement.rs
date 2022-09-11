@@ -3,6 +3,9 @@ use super::piece::Position;
 /// TODO: after finding the piece velocity direction return it converted to direction enum
 /// then travers to there and check if its not blocked by other pieces or so
 #[derive(Debug)]
+/// struct to contain piece velocity, movement vector.
+/// for example a Knight vector may be x: -2 y: -1 scalar: 1
+/// if it move left down
 pub struct Velocity
 {
     pub x: isize,

@@ -1,7 +1,7 @@
 use std::fmt;
 
-use array2ds::array2d::{Array2d, GridIdx};
-
+use array2ds::array2d::Array2d;
+use array2ds::array2d::GridIdx;
 use super::piece::{Color, Piece, PieceType, Position};
 use super::piece_movement as pm;
 use super::piece_movement::Velocity;

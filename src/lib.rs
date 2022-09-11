@@ -29,8 +29,7 @@ fn get_move() -> Position {
     while parsed.is_err() {
         parsed = parse::parse_algebraic_notation(&ask_input());
     }
-    let mut parsed = parsed.unwrap();
-    parsed
+    parsed.unwrap()
 }
 
 pub fn run_game()
@@ -42,6 +41,6 @@ pub fn run_game()
         let src = get_move();
         let dest = get_move();
         board.handle_move(&src, &dest);
-//        clear_screen();
+        clear_screen();
     }
 }

@@ -1,6 +1,6 @@
 use cte::chess;
 use cte::chess::parse::parse_algebraic_notation;
-use cte::chess::piece_movement::{is_valid_knight_move, is_valid_pawn_move, is_valid_rook_move};
+use cte::chess::piece_movement::{is_valid_king_move, is_valid_knight_move, is_valid_pawn_move, is_valid_queen_move, is_valid_rook_move};
 
 fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8])
 {
@@ -79,6 +79,44 @@ fn test_pawn_moves()
         let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
         //println!("src: {:?} dest: {:?}",&src_position,&dest_position);
         assert!(is_valid_pawn_move(&src_position, &dest_position));
+    }
+}
+
+#[test]
+fn test_queen_moves()
+{
+    let src_position = (b'f', b'3');
+    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+
+    let valid_destinations = [
+        (b'f', b'6'), (b'f', b'1'), (b'a', b'8'),
+        (b'd', b'1'),(b'h',b'1'),(b'h',b'3'),
+        (b'h',b'5'),(b'e',b'3')
+    ];
+
+    for dest in valid_destinations
+    {
+        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        assert!(is_valid_queen_move(&src_position, &dest_position));
+    }
+}
+
+#[test]
+fn test_king_moves()
+{
+    let src_position = (b'f', b'3');
+    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+
+    let valid_destinations = [
+        (b'f', b'4'), (b'f', b'2'), (b'e', b'4'),
+        (b'e', b'2'),(b'g',b'2'),(b'g',b'3'),
+        (b'g',b'4'),(b'e',b'3')
+    ];
+
+    for dest in valid_destinations
+    {
+        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        assert!(is_valid_king_move(&src_position, &dest_position));
     }
 }
 
