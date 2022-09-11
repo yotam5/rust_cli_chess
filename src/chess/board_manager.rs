@@ -79,7 +79,8 @@ fn load_fen_string_to_board(board_array: &mut Board, fen_string: &str) {
             if fen_value.is_numeric() {
                 let fen_value = fen_value.to_digit(10).unwrap() as usize;
                 for empty_index in current_line_index..fen_value {
-                    board_array[(7 - line_number, empty_index)] = Square::new_empty();
+                    board_array[(BoardSizeInfo::row_count() - 1 - line_number, empty_index)]
+                        = Square::new_empty();
                 }
                 current_line_index += fen_value - 1;
             } else if fen_value.is_ascii_alphabetic() {
@@ -89,7 +90,9 @@ fn load_fen_string_to_board(board_array: &mut Board, fen_string: &str) {
                         Piece::new(
                             fen_value.into(),
                             fen_value.into(),
-                            Position::new((7 - line_number) as isize, current_line_index as isize),
+                            Position::new
+                                ((BoardSizeInfo::row_count() - 1 - line_number) as isize,
+                                 current_line_index as isize),
                         ));
                 current_line_index += 1;
             }
@@ -100,8 +103,10 @@ fn load_fen_string_to_board(board_array: &mut Board, fen_string: &str) {
 impl Default for BoardManager
 {
     fn default() -> Self {
-        let mut board = Board::filled_with_default(BoardSizeInfo::row_count(),
-                                                   BoardSizeInfo::column_count());
+        let mut board = Board::filled_with_default(
+            BoardSizeInfo::row_count(),
+            BoardSizeInfo::column_count());
+
         initialize_board(&mut board);
         BoardManager { board, turns_counter: 0 }
     }
@@ -119,7 +124,7 @@ impl BoardManager {
         let square_dest = &self.board[*dest];
 
         if let [Some(p_source), Some(p_dest)] =
-        [square_src.piece_on_square, square_dest.piece_on_square]
+        [&square_src.piece_on_square, &square_dest.piece_on_square]
         {
             return p_source.p_color == p_dest.p_color;
         }
@@ -130,7 +135,7 @@ impl BoardManager {
     /// handle a chess move and  return bool if performed or not
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
-        let piece_source = self.board[*src].piece_on_square;
+        let piece_source = &self.board[*src].piece_on_square;
 
         let source_is_valid = piece_source.is_some();
         let dest_is_valid = self.same_owner(src, dest);
@@ -139,7 +144,9 @@ impl BoardManager {
             return false;
         }
 
-        let is_valid_move = BoardManager::is_valid_move(&piece_source.unwrap().p_type, src, dest);
+        let piece_source = &piece_source.as_ref().unwrap();
+
+        let is_valid_move = BoardManager::is_valid_move(&piece_source.p_type, src, dest);
         println!("mov valid: {}", &is_valid_move);
         if !(is_valid_move && self.check_dest_path_is_clear(src, dest))
         {
@@ -174,14 +181,18 @@ impl BoardManager {
         {
             curr_pos.x += velocity.x;
             curr_pos.y += velocity.y;
-            // todo!: check if it invalidate eating an enemy
-            if self.board[curr_pos].piece_on_square.is_some() {
-                return false;
-            }
 
-            if &curr_pos == dest
+            let current_square = &self.board[curr_pos];
+
+            // todo!: check if it invalidate eating an enemy
+            if &curr_pos == dest && !self.same_owner(src, &curr_pos)
             {
                 break;
+            }
+
+            if current_square.piece_on_square.is_some()
+            {
+                return false;
             }
         }
 
@@ -196,7 +207,7 @@ impl BoardManager {
             write!(f, "{:>2}", row_number + 1)?;
 
             for square in row_value.iter() {
-                match square.piece_on_square
+                match &square.piece_on_square
                 {
                     Some(piece) => write!(f, "{:>2}", piece)?,
                     None => write!(f, "{:>2}", "·")?,
@@ -218,7 +229,7 @@ impl BoardManager {
 
             for square in row_value
             {
-                match square.piece_on_square
+                match &square.piece_on_square
                 {
                     Some(piece) => write!(f, "{:>2}", piece)?,
                     None => write!(f, "{:>2}", "·")?,

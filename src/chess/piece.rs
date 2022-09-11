@@ -2,7 +2,7 @@ use core::panic;
 use std::convert::From;
 use std::fmt;
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Piece {
     pub p_type: PieceType,
     pub p_color: Color,
