@@ -1,8 +1,8 @@
 use core::panic;
-use std::convert::{From};
+use std::convert::From;
 use std::fmt;
 
-#[derive(Debug, Eq, PartialEq,Copy,Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Piece {
     pub p_type: PieceType,
     pub p_color: Color,
@@ -66,7 +66,7 @@ impl From<char> for PieceType {
     }
 }
 
-#[derive(Debug, Eq, PartialEq,Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Position {
     pub x: isize,
     pub y: isize,
@@ -86,24 +86,6 @@ impl From<char> for Piece {
         Piece::new(piece_type, color, Position::new(0, 0))
     }
 }
-
-impl Into<(usize,usize)> for Position
-{
-    fn into(self) -> (usize,usize)
-    {
-        (self.x as usize,self.y as usize)
-    }
-}
-
-impl Into<(usize,usize)> for &Position
-{
-    fn into(self) -> (usize,usize)
-    {
-        self.into()
-    }
-}
-
-
 
 pub fn piece_to_char(p_type: &PieceType, p_color: &Color) -> char {
     match p_type {

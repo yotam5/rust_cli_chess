@@ -7,6 +7,7 @@ pub struct Velocity
 {
     pub x: isize,
     pub y: isize,
+    pub scalar: isize,
 }
 
 impl Velocity
@@ -15,19 +16,20 @@ impl Velocity
     {
         let x = dest.x - src.x;
         let y = dest.y - src.y;
-        let mut scalar = Velocity::gcd(x, y);
+        let scalar = Velocity::gcd(x, y);
         Velocity
         {
             x: x / scalar,
             y: y / scalar,
+            scalar,
         }
     }
 
+    /// find the greatest common divisor
     pub fn gcd(x: isize, y: isize) -> isize
     {
-        return if y == 0 { x.abs() } else {
-            Velocity::gcd(y, x % y)
-        };
+        if y == 0 { return x.abs(); }
+        Velocity::gcd(y, x % y)
     }
 }
 
@@ -67,21 +69,51 @@ pub fn is_valid_knight_move(src: &Position, dest: &Position) -> bool
     ((src.x - dest.x) * (src.y - dest.y)).abs() == 2
 }
 
+/// check if pawn move is valid, using the fact that pawn can move
+/// diagonally 1 square to eat, 1 square vertically or 2 if moved the first time
+pub fn is_valid_pawn_move(src: &Position, dest: &Position) -> bool
+{
+    let v = Velocity::new(src, dest);
+    let vx_abs = v.x.abs();
+    let vy_abs = v.y.abs();
+    let scalar_abs = v.scalar.abs();
+
+    // move 2 times if moved for the first time
+    if scalar_abs == 2 {
+        // the rows that pawn begin with, relative index 1 is index 0
+        return [1, 6].contains(&src.x);
+    } else if scalar_abs == 1
+    {
+        // pawn absolute movement vectors, refer to direction for better understanding
+        // moves either 1 on x and y or only on y
+        if [(1, 1), (1, 0)].contains(&(vx_abs, vy_abs))
+        {
+            return true;
+        }
+        return false;
+    }
+    false
+}
+
+/// check if rook move is valid as it can move only in strait lines
 pub fn is_valid_rook_move(src: &Position, dest: &Position) -> bool
 {
     src.x == dest.x || src.y == dest.y
 }
 
+/// check if bishop is valid as it can move only diagonally
 pub fn is_valid_bishop_move(src: &Position, dest: &Position) -> bool
 {
     ((src.y - dest.y).abs() / (src.x - dest.x).abs()) == 1
 }
 
+/// check if queen move is valid as it can move both as Bishop and Rook
 pub fn is_valid_queen_move(src: &Position, dest: &Position) -> bool
 {
     is_valid_rook_move(src, dest) || is_valid_bishop_move(src, dest)
 }
 
+/// check if king move is valid as it can move like Queen but only one square
 pub fn is_valid_king_move(src: &Position, dest: &Position) -> bool
 {
     (src.x - dest.x).abs() <= 1 && (src.y - dest.y) <= 1

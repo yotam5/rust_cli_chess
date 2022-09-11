@@ -3,8 +3,8 @@ use std::fmt;
 use array2ds::array2d::{Array2d, GridIdx};
 
 use super::piece::{Color, Piece, PieceType, Position};
-use super::piece_movement::{Directions, Velocity};
 use super::piece_movement as pm;
+use super::piece_movement::Velocity;
 
 struct BoardSizeInfo();
 
@@ -84,7 +84,7 @@ fn load_fen_string_to_board(board_array: &mut Board, fen_string: &str) {
                 current_line_index += fen_value - 1;
             } else if fen_value.is_ascii_alphabetic() {
                 board_array
-                    [(7 - line_number, current_line_index)] =
+                    [(BoardSizeInfo::row_count() - (line_number + 1), current_line_index)] =
                     Square::new_contains(
                         Piece::new(
                             fen_value.into(),
@@ -131,24 +131,23 @@ impl BoardManager {
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
         let piece_source = self.board[*src].piece_on_square;
-        let piece_dest = self.board[*dest].piece_on_square;
 
         let source_is_valid = piece_source.is_some();
-        let dest_is_valid = !self.same_owner(src,dest);
+        let dest_is_valid = self.same_owner(src, dest);
 
-        if !source_is_valid || !dest_is_valid {
+        if !source_is_valid || dest_is_valid {
             return false;
         }
-        if !(BoardManager::is_valid_move(&piece_source.unwrap().p_type, src, dest) &&
-            self.check_dest_path_is_clear(src, dest))
+
+        let is_valid_move = BoardManager::is_valid_move(&piece_source.unwrap().p_type, src, dest);
+        println!("mov valid: {}", &is_valid_move);
+        if !(is_valid_move && self.check_dest_path_is_clear(src, dest))
         {
             return false;
         }
 
-        //println!("selected {:?} {:?}",&piece_source,&piece_dest);
-        /*println!("valid move: {} path_clear: {} source_valid: {} dest_valid: {}", &is_valid_move, &path_is_clear,
-                 &source_is_valid, &dest_is_valid);*/
         self.turns_counter += 1;
+        self.board.swap(src, dest);
         true
     }
 
@@ -160,11 +159,12 @@ impl BoardManager {
             PieceType::Bishop => pm::is_valid_bishop_move(src, dest),
             PieceType::Queen => pm::is_valid_queen_move(src, dest),
             PieceType::Rook => pm::is_valid_rook_move(src, dest),
-            _ => unimplemented!()
+            PieceType::Pawn => pm::is_valid_pawn_move(src, dest),
+            PieceType::King => pm::is_valid_king_move(src, dest),
         }
     }
 
-   /// check that the movement path of the  piece is clear, not blocked
+    /// check that the movement path of the  piece is clear, not blocked
     pub fn check_dest_path_is_clear(&self, src: &Position, dest: &Position) -> bool
     {
         let velocity = Velocity::new(src, dest);
@@ -174,7 +174,7 @@ impl BoardManager {
         {
             curr_pos.x += velocity.x;
             curr_pos.y += velocity.y;
-            //assert!(Board::valid_position_on_board(&curr_pos));
+            // todo!: check if it invalidate eating an enemy
             if self.board[curr_pos].piece_on_square.is_some() {
                 return false;
             }
