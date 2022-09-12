@@ -1,4 +1,5 @@
 use cte::chess;
+use cte::chess::board_manager::BoardManager;
 use cte::chess::parse::parse_algebraic_notation;
 use cte::chess::piece_movement::{is_valid_king_move, is_valid_knight_move, is_valid_pawn_move, is_valid_queen_move, is_valid_rook_move};
 
@@ -31,6 +32,7 @@ fn same_owner_test()
         assert_eq!(board.same_owner(&src_pos, &dest_pos), expected);
     }
 }
+
 
 #[test]
 fn algebraic_notation_test()
@@ -90,8 +92,8 @@ fn test_queen_moves()
 
     let valid_destinations = [
         (b'f', b'6'), (b'f', b'1'), (b'a', b'8'),
-        (b'd', b'1'),(b'h',b'1'),(b'h',b'3'),
-        (b'h',b'5'),(b'e',b'3')
+        (b'd', b'1'), (b'h', b'1'), (b'h', b'3'),
+        (b'h', b'5'), (b'e', b'3')
     ];
 
     for dest in valid_destinations
@@ -109,8 +111,8 @@ fn test_king_moves()
 
     let valid_destinations = [
         (b'f', b'4'), (b'f', b'2'), (b'e', b'4'),
-        (b'e', b'2'),(b'g',b'2'),(b'g',b'3'),
-        (b'g',b'4'),(b'e',b'3')
+        (b'e', b'2'), (b'g', b'2'), (b'g', b'3'),
+        (b'g', b'4'), (b'e', b'3')
     ];
 
     for dest in valid_destinations

@@ -36,35 +36,6 @@ impl Velocity
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum Directions {
-    Up,
-    Down,
-    Left,
-    Right,
-    UpLeft,
-    UpRight,
-    DownLeft,
-    DownRight,
-}
-
-impl From<Velocity> for Directions
-{
-    fn from(item: Velocity) -> Self {
-        match (item.x, item.y) {
-            (0, -1) => Directions::Up,
-            (0, 1) => Directions::Down,
-            (1, 0) => Directions::Right,
-            (-1, -1) => Directions::UpLeft,
-            (1, -1) => Directions::UpRight,
-            (1, 1) => Directions::DownRight,
-            (-1, 1) => Directions::DownLeft,
-            (-1, 0) => Directions::Left,
-            _ => unreachable!(),
-        }
-    }
-}
-
 /// check if knight move is valid, using distance from it source to dest for
 /// all of the valid moves that have the constancy
 pub fn is_valid_knight_move(src: &Position, dest: &Position) -> bool

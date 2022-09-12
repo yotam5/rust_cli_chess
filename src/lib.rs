@@ -35,7 +35,7 @@ fn get_move() -> Position {
 pub fn run_game()
 {
     let mut board = BoardManager::new();
-    println!("{:?}",&board);
+    //println!("{:?}", &board);
     let mut game_end = false;
     while !game_end {
         println!("{}", &board);

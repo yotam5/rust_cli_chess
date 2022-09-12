@@ -149,7 +149,7 @@ impl BoardManager {
                             Piece::new(
                                 p_type,
                                 p_color,
-                                p_position));
+                            ));
                     current_line_index += 1;
                 }
             }
@@ -192,15 +192,31 @@ impl BoardManager {
         }
 
         self.turns_counter += 1;
-        self.board.swap(src, dest);
+        self.perform_move(src,dest);
         true
     }
 
-    /*pub fn is_check(&self, src: &Position, dest: &Position) -> bool
-    {
-        self.black_king_pos.and_then()
+    fn perform_move(&mut self, src: &Position, dest: &Position) -> Option<Piece> {
+        let captured = self.board[*dest].0.take();
+        self.board.swap(src, dest);
+        captured
     }
-    */
+
+    fn undo_move(&mut self, src: &Position, dest: &Position) {
+        self.board.swap(src, dest);
+    }
+
+    pub fn is_check(&self, src: &Position, dest: &Position) -> bool
+    {
+        /*
+         perform the move on the board, save the previous state of both places
+         check if the king of the color that performed the move is in danger,
+         undo the move, or to find another more efficient way instread of coying the Piece
+         each call or so
+         */
+        false
+    }
+
 
     /// check that the move is valid, if piece dest is legal movement if not interrupted by anything
     pub fn is_valid_move(piece_type: &PieceType, src: &Position, dest: &Position) -> bool

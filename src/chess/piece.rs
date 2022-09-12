@@ -6,14 +6,12 @@ use std::fmt;
 pub struct Piece {
     pub p_type: PieceType,
     pub p_color: Color,
-    pub p_position: Position,
 }
 
 impl Piece {
-    pub fn new(p_type: PieceType, p_color: Color, p_position: Position) -> Self {
+    pub fn new(p_type: PieceType, p_color: Color) -> Self {
         Piece {
             p_type,
-            p_position,
             p_color,
         }
     }
@@ -65,7 +63,7 @@ impl From<char> for PieceType {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Copy,Clone)]
 pub struct Position {
     pub x: isize,
     pub y: isize,
@@ -82,7 +80,7 @@ impl From<char> for Piece {
     fn from(item: char) -> Self {
         let color = item.into();
         let piece_type = item.into();
-        Piece::new(piece_type, color, Position::new(0, 0))
+        Piece::new(piece_type, color)
     }
 }
 
