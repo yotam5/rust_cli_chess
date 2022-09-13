@@ -42,6 +42,6 @@ pub fn run_game()
         let src = get_move();
         let dest = get_move();
         board.handle_move(&src, &dest);
-        clear_screen();
+        //clear_screen();
     }
 }

@@ -1,6 +1,6 @@
 use cte::chess;
-use cte::chess::board_manager::BoardManager;
 use cte::chess::parse::parse_algebraic_notation;
+use cte::chess::piece::{PieceType,Color, Position};
 use cte::chess::piece_movement::{is_valid_king_move, is_valid_knight_move, is_valid_pawn_move, is_valid_queen_move, is_valid_rook_move};
 
 fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8])
@@ -79,7 +79,7 @@ fn test_pawn_moves()
     for dest in valid_destinations {
         // println!("dest fo: {:?}-{:?}",dest.0 as char, dest.1 as char);
         let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        //println!("src: {:?} dest: {:?}",&src_position,&dest_position);
+        println!("test: src: {:?} test: dest: {:?}",&src_position,&dest_position);
         assert!(is_valid_pawn_move(&src_position, &dest_position));
     }
 }
@@ -101,6 +101,8 @@ fn test_queen_moves()
         let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
         assert!(is_valid_queen_move(&src_position, &dest_position));
     }
+
+
 }
 
 #[test]
@@ -114,12 +116,33 @@ fn test_king_moves()
         (b'e', b'2'), (b'g', b'2'), (b'g', b'3'),
         (b'g', b'4'), (b'e', b'3')
     ];
-
+    let invalid_destinations = [
+        (b'f',b'5'),(b'f',b'1'),(b'd',b'3'),
+        (b'h',b'3'),(b'd',b'5'),(b'h',b'1'),
+        (b'h',b'5'),(b'd',b'1')
+    ];
     for dest in valid_destinations
     {
         let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
         assert!(is_valid_king_move(&src_position, &dest_position));
     }
+    for dest in invalid_destinations{
+    }
+}
+
+pub fn move_validation_helper(arr_of_moves: &[(u8,u8)],p_type: PieceType, 
+    p_source: Position,bv: bool)
+{
+    use PieceType::*;
+        for dest in arr_of_moves
+        {
+            let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+            match p_type
+            {
+                King => assert_eq!(is_valid_king_move(&p_source,&dest_position),bv),
+                _ => unimplemented!()
+            };
+        }
 }
 
 #[test]
@@ -131,7 +154,9 @@ fn test_rook_moves()
     let valid_destinations = [
         (b'a', b'4'), (b'e', b'1'), (b'h', b'4'), (b'e', b'8')
     ];
-
+    let invalid_destinations = [
+        (b'a',)
+    ] 
     for dest in valid_destinations
     {
         let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
