@@ -56,7 +56,7 @@ impl Square {
         if !self.is_empty() {
             return self.0.unwrap().p_color == color;
         }
-        return false;
+        false
     }
 }
 
