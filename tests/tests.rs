@@ -1,7 +1,7 @@
 use cte::chess;
 use cte::chess::parse::parse_algebraic_notation;
-use cte::chess::piece::{PieceType,Color, Position};
-use cte::chess::piece_movement::{is_valid_king_move, is_valid_knight_move, is_valid_pawn_move, is_valid_queen_move, is_valid_rook_move};
+use cte::chess::piece::{Color, PieceType, Position};
+use cte::chess::piece_movement::{is_valid_bishop_move, is_valid_king_move, is_valid_knight_move, is_valid_pawn_move, is_valid_queen_move, is_valid_rook_move};
 
 fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8])
 {
@@ -59,11 +59,8 @@ fn test_knight_moves()
         (b'g', b'3'), (b'g', b'5')
     ];
 
-    for dest in valid_destinations
-    {
-        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        assert_eq!(is_valid_knight_move(&src_position, &dest_position), true);
-    }
+    move_validation_helper(&valid_destinations, PieceType::Knight,
+                           src_position, true);
 }
 
 #[test]
@@ -76,12 +73,15 @@ fn test_pawn_moves()
         (b'a', b'3'), (b'b', b'3'), (b'c', b'3'), (b'b', b'4')
     ];
 
-    for dest in valid_destinations {
-        // println!("dest fo: {:?}-{:?}",dest.0 as char, dest.1 as char);
-        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        println!("test: src: {:?} test: dest: {:?}",&src_position,&dest_position);
-        assert!(is_valid_pawn_move(&src_position, &dest_position));
-    }
+    let invalid_destinations = [
+        (b'b',b'5'),(b'd',b'4'),(b'a',b'2'),(b'd',b'2')
+    ];
+
+    move_validation_helper(&valid_destinations, PieceType::Pawn,
+                           src_position, true);
+
+    move_validation_helper(&invalid_destinations, PieceType::Pawn,
+                           src_position,false);
 }
 
 #[test]
@@ -96,13 +96,8 @@ fn test_queen_moves()
         (b'h', b'5'), (b'e', b'3')
     ];
 
-    for dest in valid_destinations
-    {
-        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        assert!(is_valid_queen_move(&src_position, &dest_position));
-    }
-
-
+    move_validation_helper(&valid_destinations, PieceType::Queen,
+                           src_position, true);
 }
 
 #[test]
@@ -117,32 +112,35 @@ fn test_king_moves()
         (b'g', b'4'), (b'e', b'3')
     ];
     let invalid_destinations = [
-        (b'f',b'5'),(b'f',b'1'),(b'd',b'3'),
-        (b'h',b'3'),(b'd',b'5'),(b'h',b'1'),
-        (b'h',b'5'),(b'd',b'1')
+        (b'f', b'5'), (b'f', b'1'), (b'd', b'3'),
+        (b'h', b'3'), (b'd', b'5'), (b'h', b'1'),
+        (b'h', b'5'), (b'd', b'1')
     ];
-    for dest in valid_destinations
-    {
-        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        assert!(is_valid_king_move(&src_position, &dest_position));
-    }
-    for dest in invalid_destinations{
-    }
+    move_validation_helper(&valid_destinations, PieceType::King,
+                           src_position, true);
+
+    move_validation_helper(&invalid_destinations, PieceType::King,
+                           src_position, false);
 }
 
-pub fn move_validation_helper(arr_of_moves: &[(u8,u8)],p_type: PieceType, 
-    p_source: Position,bv: bool)
+pub fn move_validation_helper(arr_of_moves: &[(u8, u8)], p_type: PieceType,
+                              source_position: Position, bv: bool)
 {
     use PieceType::*;
-        for dest in arr_of_moves
+    for dest in arr_of_moves
+    {
+        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        let validation_result = match p_type
         {
-            let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-            match p_type
-            {
-                King => assert_eq!(is_valid_king_move(&p_source,&dest_position),bv),
-                _ => unimplemented!()
-            };
-        }
+            King => is_valid_king_move(&source_position, &dest_position),
+            Queen => is_valid_queen_move(&source_position, &dest_position),
+            Bishop => is_valid_bishop_move(&source_position, &dest_position),
+            Rook => is_valid_rook_move(&source_position, &dest_position),
+            Pawn => is_valid_pawn_move(&source_position, &dest_position),
+            Knight => is_valid_knight_move(&source_position, &dest_position),
+        };
+        assert_eq!(validation_result, bv);
+    }
 }
 
 #[test]
@@ -154,14 +152,15 @@ fn test_rook_moves()
     let valid_destinations = [
         (b'a', b'4'), (b'e', b'1'), (b'h', b'4'), (b'e', b'8')
     ];
+    move_validation_helper(&valid_destinations, PieceType::Rook,
+                           src_position, true);
+
     let invalid_destinations = [
-        (b'a',)
-    ] 
-    for dest in valid_destinations
-    {
-        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
-        assert!(is_valid_rook_move(&src_position, &dest_position));
-    }
+        (b'b',b'1'),(b'h',b'1'),(b'a',b'8'),(b'h',b'8')
+    ];
+
+    move_validation_helper(&invalid_destinations, PieceType::Rook,
+                           src_position,false);
 }
 
 

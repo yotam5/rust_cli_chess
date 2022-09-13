@@ -59,23 +59,23 @@ pub fn is_valid_pawn_move(src: &Position, dest: &Position) -> bool {
     let vx_abs = v.x.abs();
     let vy_abs = v.y.abs();
     let scalar_abs = v.scalar.abs();
-
-    //println!("from: {:?} to {:?} vel: {:?}",src,dest,&v);
+    let comp = (vx_abs,vy_abs);
 
     // move 2 times if moved for the first time
-    if  scalar_abs == 2 && (vx_abs + vy_abs < scalar_abs)  {
+    if scalar_abs > 2{
+        return false
+    }
+    if ![(1,1),(1,0),(2,0)].contains(&comp){
+        return false
+    }
+
+    if  scalar_abs == 2   {
+
         // the rows that pawn begin with, relative index 1 is index 0
-        return [1, 6].contains(&src.x);
+        // if the pawn move 2 squares it must remain in the same column
+        return [1, 6].contains(&src.x) && v.y == 0;
     }
-    if scalar_abs == 1  {
-        // pawn absolute movement vectors, refer to direction for better understanding
-        // moves either 1 on x and y or only on y
-        if [(1, 1), (1, 0)].contains(&(vx_abs, vy_abs)) {
-            return true;
-        }
-        return false;
-    }
-    false
+    true
 }
 
 /// check if rook move is valid as it can move only in strait lines
