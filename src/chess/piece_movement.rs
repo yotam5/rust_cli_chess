@@ -8,9 +8,9 @@ use super::piece::Position;
 /// if it move left down
 pub struct Velocity
 {
-    pub x: isize,
-    pub y: isize,
-    pub scalar: isize,
+    pub x: i8,
+    pub y: i8,
+    pub scalar: i8,
 }
 
 impl Velocity
@@ -29,7 +29,7 @@ impl Velocity
     }
 
     /// find the greatest common divisor
-    pub fn gcd(x: isize, y: isize) -> isize
+    pub fn gcd(x: i8, y: i8) -> i8
     {
         if y == 0 { return x.abs(); }
         Velocity::gcd(y, x % y)

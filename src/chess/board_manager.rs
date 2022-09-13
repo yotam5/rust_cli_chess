@@ -29,29 +29,22 @@ impl BoardSizeInfo
 
 type Board = Array2d<Square>;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Default)]
 struct Square(Option<Piece>);
 
 
 impl Square
 {
-    pub fn new_empty() -> Self
-    {
-        Square(None)
-    }
-
-    pub fn new_contains(piece_info: Piece) -> Self
+    pub fn new(piece_info: Piece) -> Self
     {
         Square(Some(piece_info))
     }
-}
 
-impl Default for Square
-{
-    fn default() -> Self {
-        Square::new_empty()
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
     }
 }
+
 
 #[derive(Debug)]
 pub struct BoardManager {
@@ -128,15 +121,15 @@ impl BoardManager {
                     let fen_value = fen_value.to_digit(10).unwrap() as usize;
                     for empty_index in current_line_index..fen_value {
                         board[(BoardSizeInfo::row_count() - 1 - line_number, empty_index)]
-                            = Square::new_empty();
+                            = Square::default();
                     }
                     current_line_index += fen_value - 1;
                 } else if fen_value.is_ascii_alphabetic() {
                     let p_type = fen_value.into();
                     let p_color = fen_value.into();
                     let p_position = Position::new(
-                        (BoardSizeInfo::row_count() - 1 - line_number) as isize,
-                        current_line_index as isize);
+                        (BoardSizeInfo::row_count() - 1 - line_number) as i8,
+                        current_line_index as i8);
                     match (p_type, p_color)
                     {
                         (King, Color::White) => white_king_pos = Some(p_position),
@@ -145,7 +138,7 @@ impl BoardManager {
                     }
                     board
                         [(BoardSizeInfo::row_count() - (line_number + 1), current_line_index)] =
-                        Square::new_contains(
+                        Square::new(
                             Piece::new(
                                 p_type,
                                 p_color,
@@ -174,32 +167,35 @@ impl BoardManager {
     /// handle a chess move and  return bool if performed or not
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool
     {
-        let piece_source = &self.board[*src].0;
-
-        let source_is_valid = piece_source.is_some();
-        let dest_is_valid = self.same_owner(src, dest);
-
-        if !source_is_valid || dest_is_valid {
-            return false;
-        }
-
-        let piece_source = &piece_source.as_ref().unwrap();
-
-        let is_valid_move = BoardManager::is_valid_move(&piece_source.p_type, src, dest);
-        if !(is_valid_move && self.check_dest_path_is_clear(src, dest))
-        {
-            return false;
-        }
-
-        self.turns_counter += 1;
-        self.perform_move(src,dest);
-        true
+        let mn = self.perform_move(src,dest).unwrap();
+        false
     }
 
-    fn perform_move(&mut self, src: &Position, dest: &Position) -> Option<Piece> {
+    fn perform_move(&mut self, src: &Position, dest: &Position) -> MyResult<Option<Piece>> {
+        let piece_source = &self.board[*src].0;
+        piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
+
+        let dest_is_invalid = self.same_owner(src, dest);
+        if dest_is_invalid {
+            Err("Can't Eat The Same Color")?;
+        }
+
+        let piece_source = piece_source.unwrap();
+        let valid_move = BoardManager::is_valid_move(
+            &piece_source.p_type, src, dest);
+
+        if !valid_move {
+            Err("Piece Can't Move That Way")?;
+        }
+
+        if !self.check_dest_path_is_clear(src, dest) {
+            Err("That Piece Movement Path Is Blocked")?;
+        }
+
         let captured = self.board[*dest].0.take();
         self.board.swap(src, dest);
-        captured
+        self.turns_counter += 1;
+        Ok(captured)
     }
 
     fn undo_move(&mut self, src: &Position, dest: &Position) {
