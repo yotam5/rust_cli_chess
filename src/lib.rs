@@ -1,35 +1,50 @@
-use std::io::{self, BufReader, Read};
+use std::io::{self, BufReader, Read, Write};
 
 use chess::board_manager::BoardManager;
 use chess::parse;
 use chess::piece::Position;
 
+use crate::parse::parse_algebraic_notation;
+
 pub mod chess;
 
-fn input_read() -> [u8; 2] {
+fn input_read() -> ([u8; 2], [u8; 2]) {
     let stdin = io::stdin();
-    let mut input: [u8; 2] = Default::default();
+    let mut square_from: [u8; 2] = Default::default();
+    let mut square_to: [u8; 2] = Default::default();
 
-    let mut bstdin = BufReader::new(stdin.take(4));
-    let _ = bstdin.read(&mut input).unwrap();
-    input
+    io::stdout().flush().unwrap();
+    let mut bstdin = BufReader::new(stdin.take(5));
+    let _ = bstdin.read(&mut square_from).unwrap();
+    let _ = bstdin.read(&mut square_to).unwrap();
+    io::stdout().flush().unwrap();
+
+    (square_from, square_to)
 }
 
 fn clear_screen() {
     print!("\x1B[2J\x1B[1;1H");
 }
 
-fn ask_input() -> [u8; 2] {
-    println!("selected position: [row,col]");
+fn ask_input() -> ([u8; 2], [u8; 2]) {
+    println!("enter move:");
     input_read()
 }
 
-fn get_move() -> Position {
-    let mut parsed = parse::parse_algebraic_notation(&ask_input());
-    while parsed.is_err() {
-        parsed = parse::parse_algebraic_notation(&ask_input());
+fn get_user_move() -> (Position, Position) {
+    let mut move_info = ask_input();
+    let mut square_from = parse_algebraic_notation(&move_info.0);
+    let mut square_to = parse_algebraic_notation(&move_info.1);
+
+    while square_to.is_err() || square_from.is_err()
+    {
+        if square_to.is_err() { println!("{:?}", &square_to); }
+        if square_from.is_err() { println!("{:?}", &square_from); }
+        move_info = ask_input();
+        square_from = parse_algebraic_notation(&move_info.0);
+        square_to = parse_algebraic_notation(&move_info.1);
     }
-    parsed.unwrap()
+    (square_from.unwrap(), square_to.unwrap())
 }
 
 pub fn run_game()
@@ -37,11 +52,16 @@ pub fn run_game()
     let mut board = BoardManager::new();
     //println!("{:?}", &board);
     let mut game_end = false;
+
+    println!("{}", &board);
     while !game_end {
+        let move_info = get_user_move();
+        let move_result = board.handle_move(&move_info.0, &move_info.1);
+        if move_result.is_err(){
+            println!("{:?}",&move_result);
+            continue;
+        }
+        clear_screen();
         println!("{}", &board);
-        let src = get_move();
-        let dest = get_move();
-        board.handle_move(&src, &dest);
-        //clear_screen();
     }
 }

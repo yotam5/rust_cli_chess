@@ -186,11 +186,8 @@ impl BoardManager {
     }
 
     /// handle a chess move and  return bool if performed or not
-    pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool {
-        println!("moving from: {:?} to: {:?}", &src, &dest);
-        println!("{:?}", self.perform_move(src, dest));
-        println!("{:?}", self.is_check(Color::Black));
-        false
+    pub fn handle_move(&mut self, src: &Position, dest: &Position) -> MyResult<()>{
+        self.perform_move(src,dest)
     }
 
     fn validate_move(&mut self, src: &Position, dest: &Position) -> MyResult<Piece>
@@ -243,7 +240,7 @@ impl BoardManager {
     }
 
     /// undo any last move that have been done by regardless
-    fn undo_move_regardless(&mut self) {
+    pub fn undo_move_regardless(&mut self) {
         let last_move = self.moves_tracker.pop_back().unwrap();
 
         self.board[last_move.move_src].0 = last_move.piece_eaten;
@@ -252,7 +249,7 @@ impl BoardManager {
     }
 
     /// make a move even if not legal
-    fn do_move_regardless(&mut self, src: &Position, dest: &Position)
+    pub fn do_move_regardless(&mut self, src: &Position, dest: &Position)
     {
         let chess_move = ChessMove {
             move_src: *src,
