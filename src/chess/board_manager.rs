@@ -60,13 +60,24 @@ impl Square {
     }
 }
 
-#[derive(Debug)]
 pub struct BoardManager {
     board: Board,
     turns_counter: usize,
     moves_tracker: VecDeque<ChessMove>,
     white_king_pos: Position,
     black_king_pos: Position,
+}
+
+impl fmt::Debug for BoardManager
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BoardManager")
+            .field("turns_counter", &self.turns_counter)
+            .field("moves_tracker", &self.moves_tracker)
+            .field("white king pos", &self.white_king_pos)
+            .field("black king pos", &self.black_king_pos)
+            .finish()
+    }
 }
 
 impl GridIdx for Position {
@@ -127,139 +138,9 @@ impl BoardManager {
 
         false
     }
-
-    /// load starting position for the chess game
-    fn load_default_game_position(board: &mut Board) -> KingsTracker {
-        let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        BoardManager::load_fen_string_to_board(board, initial_game_position).unwrap()
+    pub fn handle_move(&mut self, src: &Position, dest: &Position) -> MyResult<()> {
+        self.perform_move(src, dest)
     }
-
-    /// load fen string to the board
-    fn load_fen_string_to_board(board: &mut Board, fen_string: &str) -> MyResult<KingsTracker> {
-        let mut black_king_pos = None;
-        let mut white_king_pos = None;
-        for (line_number, line_fen_value) in fen_string.split('/').enumerate() {
-            let mut current_line_index: usize = 0;
-
-            for fen_value in line_fen_value.chars() {
-                if fen_value.is_numeric() {
-                    let fen_value = fen_value.to_digit(10).unwrap() as usize;
-                    for empty_index in current_line_index..fen_value {
-                        board[(BoardSizeInfo::row_count() - 1 - line_number, empty_index)] =
-                            Square::default();
-                    }
-                    current_line_index += fen_value - 1;
-                } else if fen_value.is_ascii_alphabetic() {
-                    let p_type = fen_value.into();
-                    let p_color = fen_value.into();
-                    let p_position = Position::new(
-                        (BoardSizeInfo::row_count() - 1 - line_number) as i8,
-                        current_line_index as i8,
-                    );
-                    match (p_type, p_color) {
-                        (King, Color::White) => white_king_pos = Some(p_position),
-                        (King, Color::Black) => black_king_pos = Some(p_position),
-                        _ => {}
-                    }
-                    board[(
-                        BoardSizeInfo::row_count() - (line_number + 1),
-                        current_line_index,
-                    )] = Square::new(Piece::new(p_type, p_color));
-                    current_line_index += 1;
-                }
-            }
-        }
-
-        if white_king_pos.is_none() {
-            return Err("White King Not Found")?;
-        }
-        if black_king_pos.is_none() {
-            return Err("Black King Not Found")?;
-        }
-
-        let white_king_pos = white_king_pos.unwrap();
-        let black_king_pos = black_king_pos.unwrap();
-        Ok(KingsTracker {
-            white_king_pos,
-            black_king_pos,
-        })
-    }
-
-    /// handle a chess move and  return bool if performed or not
-    pub fn handle_move(&mut self, src: &Position, dest: &Position) -> MyResult<()>{
-        self.perform_move(src,dest)
-    }
-
-    fn validate_move(&mut self, src: &Position, dest: &Position) -> MyResult<Piece>
-    {
-        let piece_source = &self.board[*src].0;
-        piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
-
-        let dest_is_invalid = self.same_owner(src, dest);
-
-        if dest_is_invalid {
-            Err("Can't Eat The Same Color")?;
-        }
-
-        let piece_source = piece_source.unwrap();
-        let valid_move = pm::is_valid_move(&piece_source.p_type, src, dest);
-
-        if !valid_move {
-            Err("Piece Can't Move That Way")?;
-        }
-
-        if !self.check_dest_path_is_clear(src, dest) {
-            Err("That Piece Movement Path Is Blocked")?;
-        }
-
-        self.do_move_regardless(src,dest);
-
-        let is_check = self.is_check(piece_source.p_color);
-
-        self.undo_move_regardless();
-
-        if is_check
-        {
-            Err("Can't Make A Move That Danger The King")?;
-        }
-        Ok(piece_source)
-    }
-
-    fn perform_move(&mut self, src: &Position, dest: &Position) -> MyResult<()> {
-        let piece_source = self.validate_move(src,dest)?;
-
-        match (piece_source.p_type, piece_source.p_color) {
-            (King, Color::White) => self.white_king_pos = *dest,
-            (King, Color::Black) => self.black_king_pos = *dest,
-            _ => {}
-        }
-
-        self.do_move_regardless(src,dest);
-        self.turns_counter += 1;
-        Ok(())
-    }
-
-    /// undo any last move that have been done by regardless
-    pub fn undo_move_regardless(&mut self) {
-        let last_move = self.moves_tracker.pop_back().unwrap();
-
-        self.board[last_move.move_src].0 = last_move.piece_eaten;
-
-        self.board.swap(&last_move.move_src, &last_move.move_dest);
-    }
-
-    /// make a move even if not legal
-    pub fn do_move_regardless(&mut self, src: &Position, dest: &Position)
-    {
-        let chess_move = ChessMove {
-            move_src: *src,
-            move_dest: *dest,
-            piece_eaten: self.board[*dest].0.take(),
-        };
-        self.board.swap(src, dest);
-        self.moves_tracker.push_back(chess_move)
-    }
-
     pub fn is_check(&self, king_color: Color) -> bool {
         /*
          MAYBE ADD CACHING
@@ -351,6 +232,137 @@ impl BoardManager {
         Ok(())
     }
 }
+
+impl BoardManager
+{
+    /// load starting position for the chess game
+    fn load_default_game_position(board: &mut Board) -> KingsTracker {
+        let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        BoardManager::load_fen_string_to_board(board, initial_game_position).unwrap()
+    }
+
+    /// load fen string to the board
+    fn load_fen_string_to_board(board: &mut Board, fen_string: &str) -> MyResult<KingsTracker> {
+        let mut black_king_pos = None;
+        let mut white_king_pos = None;
+        for (line_number, line_fen_value) in fen_string.split('/').enumerate() {
+            let mut current_line_index: usize = 0;
+
+            for fen_value in line_fen_value.chars() {
+                if fen_value.is_numeric() {
+                    let fen_value = fen_value.to_digit(10).unwrap() as usize;
+                    for empty_index in current_line_index..fen_value {
+                        board[(BoardSizeInfo::row_count() - 1 - line_number, empty_index)] =
+                            Square::default();
+                    }
+                    current_line_index += fen_value - 1;
+                } else if fen_value.is_ascii_alphabetic() {
+                    let p_type = fen_value.into();
+                    let p_color = fen_value.into();
+                    let p_position = Position::new(
+                        (BoardSizeInfo::row_count() - 1 - line_number) as i8,
+                        current_line_index as i8,
+                    );
+                    match (p_type, p_color) {
+                        (King, Color::White) => white_king_pos = Some(p_position),
+                        (King, Color::Black) => black_king_pos = Some(p_position),
+                        _ => {}
+                    }
+                    board[(
+                        BoardSizeInfo::row_count() - (line_number + 1),
+                        current_line_index,
+                    )] = Square::new(Piece::new(p_type, p_color));
+                    current_line_index += 1;
+                }
+            }
+        }
+
+        if white_king_pos.is_none() {
+            return Err("White King Not Found")?;
+        }
+        if black_king_pos.is_none() {
+            return Err("Black King Not Found")?;
+        }
+
+        let white_king_pos = white_king_pos.unwrap();
+        let black_king_pos = black_king_pos.unwrap();
+        Ok(KingsTracker {
+            white_king_pos,
+            black_king_pos,
+        })
+    }
+
+    fn validate_move(&mut self, src: &Position, dest: &Position) -> MyResult<Piece>
+    {
+        let piece_source = &self.board[*src].0;
+        piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
+
+        let dest_is_invalid = self.same_owner(src, dest);
+
+        if dest_is_invalid {
+            Err("Can't Eat The Same Color")?;
+        }
+
+        let piece_source = piece_source.unwrap();
+        let valid_move = pm::is_valid_move(&piece_source.p_type, src, dest);
+
+        if !valid_move {
+            Err("Piece Can't Move That Way")?;
+        }
+
+        if !self.check_dest_path_is_clear(src, dest) {
+            Err("That Piece Movement Path Is Blocked")?;
+        }
+
+        self.do_move_regardless(src, dest);
+
+        let is_check = self.is_check(piece_source.p_color);
+
+        self.undo_move_regardless();
+
+        if is_check
+        {
+            Err("Can't Make A Move That Danger The King")?;
+        }
+        Ok(piece_source)
+    }
+
+    fn perform_move(&mut self, src: &Position, dest: &Position) -> MyResult<()> {
+        let piece_source = self.validate_move(src, dest)?;
+
+        match (piece_source.p_type, piece_source.p_color) {
+            (King, Color::White) => self.white_king_pos = *dest,
+            (King, Color::Black) => self.black_king_pos = *dest,
+            _ => {}
+        }
+
+        self.do_move_regardless(src, dest);
+        self.turns_counter += 1;
+        Ok(())
+    }
+
+    /// undo any last move that have been done by regardless
+    fn undo_move_regardless(&mut self) {
+        let last_move = self.moves_tracker.pop_back().unwrap();
+
+        self.board[last_move.move_src].0 = last_move.piece_eaten;
+
+        self.board.swap(&last_move.move_src, &last_move.move_dest);
+    }
+
+    /// make a move even if not legal
+    fn do_move_regardless(&mut self, src: &Position, dest: &Position)
+    {
+        let chess_move = ChessMove {
+            move_src: *src,
+            move_dest: *dest,
+            piece_eaten: self.board[*dest].0.take(),
+        };
+        self.board.swap(src, dest);
+        self.moves_tracker.push_back(chess_move)
+    }
+}
+
 
 /// format algebraic notation alphabetic
 pub fn algebraic_notation_letters_formatted(f: &mut Formatter) {

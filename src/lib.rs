@@ -63,5 +63,6 @@ pub fn run_game()
         }
         clear_screen();
         println!("{}", &board);
+        println!("{:?}",&board);
     }
 }
