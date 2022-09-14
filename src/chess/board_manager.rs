@@ -1,13 +1,13 @@
-use array2ds::array2d::Array2d;
-use array2ds::array2d::GridIdx;
 use std::collections::VecDeque;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Formatter;
 
+use array2ds::array2d::Array2d;
+use array2ds::array2d::GridIdx;
+
 use crate::chess::piece::PieceType::King;
 
-use super::piece;
 use super::piece::{Color, Piece, PieceType, Position};
 use super::piece_movement as pm;
 use super::piece_movement::Velocity;
@@ -18,11 +18,11 @@ pub struct BoardSizeInfo();
 
 #[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
-    m_src: Position,
-    m_dest: Position,
+    move_src: Position,
+    move_dest: Position,
     piece_eaten: Option<Piece>,
-    piece_moved: Piece,
 }
+
 
 pub struct KingsTracker {
     pub(super) white_king_pos: Position,
@@ -40,7 +40,7 @@ impl BoardSizeInfo {
 
 type Board = Array2d<Square>;
 
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Debug, Eq, PartialEq, Default, Copy, Clone)]
 struct Square(Option<Piece>);
 
 impl Square {
@@ -99,6 +99,21 @@ impl Default for BoardManager {
 impl BoardManager {
     pub fn new() -> Self {
         BoardManager::default()
+    }
+
+    pub fn new_from_fen(fen_string: &str) -> Self
+    {
+        let mut board = Board::filled_with_default(BoardSizeInfo::row_count(),
+                                                   BoardSizeInfo::column_count());
+        let king_tracker = BoardManager::load_fen_string_to_board
+            (&mut board, fen_string).unwrap();
+        BoardManager {
+            board,
+            turns_counter: 0,
+            moves_tracker: VecDeque::with_capacity(80),
+            white_king_pos: king_tracker.white_king_pos,
+            black_king_pos: king_tracker.black_king_pos,
+        }
     }
 
     /// check if two positions have the same owner
@@ -172,23 +187,24 @@ impl BoardManager {
 
     /// handle a chess move and  return bool if performed or not
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> bool {
-        println!("moving from: {:?} to: {:?}",&src,&dest);
-        println!("{:?}",self.perform_move(src, dest));
+        println!("moving from: {:?} to: {:?}", &src, &dest);
+        println!("{:?}", self.perform_move(src, dest));
         println!("{:?}", self.is_check(Color::Black));
         false
     }
 
-    fn perform_move(&mut self, src: &Position, dest: &Position) -> MyResult<Option<Piece>> {
+    fn validate_move(&mut self, src: &Position, dest: &Position) -> MyResult<Piece>
+    {
         let piece_source = &self.board[*src].0;
         piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
 
         let dest_is_invalid = self.same_owner(src, dest);
+
         if dest_is_invalid {
             Err("Can't Eat The Same Color")?;
         }
 
         let piece_source = piece_source.unwrap();
-
         let valid_move = pm::is_valid_move(&piece_source.p_type, src, dest);
 
         if !valid_move {
@@ -199,25 +215,57 @@ impl BoardManager {
             Err("That Piece Movement Path Is Blocked")?;
         }
 
-        match (piece_source.p_type,piece_source.p_color){
+        self.do_move_regardless(src,dest);
+
+        let is_check = self.is_check(piece_source.p_color);
+
+        self.undo_move_regardless();
+
+        if is_check
+        {
+            Err("Can't Make A Move That Danger The King")?;
+        }
+        Ok(piece_source)
+    }
+
+    fn perform_move(&mut self, src: &Position, dest: &Position) -> MyResult<()> {
+        let piece_source = self.validate_move(src,dest)?;
+
+        match (piece_source.p_type, piece_source.p_color) {
             (King, Color::White) => self.white_king_pos = *dest,
-            (King,Color::Black) => self.black_king_pos = *dest,
+            (King, Color::Black) => self.black_king_pos = *dest,
             _ => {}
         }
 
-        let captured = self.board[*dest].0.take();
-        self.board.swap(src, dest);
+        self.do_move_regardless(src,dest);
         self.turns_counter += 1;
-        Ok(captured)
+        Ok(())
     }
 
-    fn undo_move(&mut self, src: &Position, dest: &Position) {
+    /// undo any last move that have been done by regardless
+    fn undo_move_regardless(&mut self) {
+        let last_move = self.moves_tracker.pop_back().unwrap();
+
+        self.board[last_move.move_src].0 = last_move.piece_eaten;
+
+        self.board.swap(&last_move.move_src, &last_move.move_dest);
+    }
+
+    /// make a move even if not legal
+    fn do_move_regardless(&mut self, src: &Position, dest: &Position)
+    {
+        let chess_move = ChessMove {
+            move_src: *src,
+            move_dest: *dest,
+            piece_eaten: self.board[*dest].0.take(),
+        };
         self.board.swap(src, dest);
+        self.moves_tracker.push_back(chess_move)
     }
 
     pub fn is_check(&self, king_color: Color) -> bool {
         /*
-        MAYBE ADD CACHING
+         MAYBE ADD CACHING
         */
 
         let king_pos = match king_color {
@@ -232,20 +280,14 @@ impl BoardManager {
                     let p_type = square.0.unwrap().p_type;
                     let is_valid = pm::is_valid_move(&p_type, &src, &king_pos);
                     let is_clear = self.check_dest_path_is_clear(&src, &king_pos);
-                    println!(
-                        "who: {:?} where: {:?} valid: {:?} clear: {:?}",
-                        &p_type, &src, &is_valid, &is_clear
-                    );
 
-                    println!("king pos {:?}: ", &king_pos);
-                    println!("sqaure: {:?}-src: {:?}", &square, &src);
                     if is_valid && is_clear {
                         return true;
                     }
                 }
             }
         }
-        return false;
+        false
     }
 
     /// check that the move is valid, if piece dest is legal movement if not interrupted by anything
