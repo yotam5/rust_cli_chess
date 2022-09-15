@@ -21,8 +21,8 @@ pub struct ChessMove {
     move_src: Position,
     move_dest: Position,
     piece_eaten: Option<Piece>,
+    prompted: Option<Piece>,
 }
-
 
 pub struct KingsTracker {
     pub(super) white_king_pos: Position,
@@ -68,8 +68,7 @@ pub struct BoardManager {
     black_king_pos: Position,
 }
 
-impl fmt::Debug for BoardManager
-{
+impl fmt::Debug for BoardManager {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("BoardManager")
             .field("turns_counter", &self.turns_counter)
@@ -112,12 +111,10 @@ impl BoardManager {
         BoardManager::default()
     }
 
-    pub fn new_from_fen(fen_string: &str) -> Self
-    {
-        let mut board = Board::filled_with_default(BoardSizeInfo::row_count(),
-                                                   BoardSizeInfo::column_count());
-        let king_tracker = BoardManager::load_fen_string_to_board
-            (&mut board, fen_string).unwrap();
+    pub fn new_from_fen(fen_string: &str) -> Self {
+        let mut board =
+            Board::filled_with_default(BoardSizeInfo::row_count(), BoardSizeInfo::column_count());
+        let king_tracker = BoardManager::load_fen_string_to_board(&mut board, fen_string).unwrap();
         BoardManager {
             board,
             turns_counter: 0,
@@ -138,6 +135,7 @@ impl BoardManager {
 
         false
     }
+
     pub fn handle_move(&mut self, src: &Position, dest: &Position) -> MyResult<()> {
         self.perform_move(src, dest)
     }
@@ -233,8 +231,7 @@ impl BoardManager {
     }
 }
 
-impl BoardManager
-{
+impl BoardManager {
     /// load starting position for the chess game
     fn load_default_game_position(board: &mut Board) -> KingsTracker {
         let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
@@ -292,8 +289,7 @@ impl BoardManager
         })
     }
 
-    fn validate_move(&mut self, src: &Position, dest: &Position) -> MyResult<Piece>
-    {
+    fn validate_move(&mut self, src: &Position, dest: &Position) -> MyResult<Piece> {
         let piece_source = &self.board[*src].0;
         piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
 
@@ -320,8 +316,7 @@ impl BoardManager
 
         self.undo_move_regardless();
 
-        if is_check
-        {
+        if is_check {
             Err("Can't Make A Move That Danger The King")?;
         }
         Ok(piece_source)
@@ -351,18 +346,17 @@ impl BoardManager
     }
 
     /// make a move even if not legal
-    fn do_move_regardless(&mut self, src: &Position, dest: &Position)
-    {
+    fn do_move_regardless(&mut self, src: &Position, dest: &Position) {
         let chess_move = ChessMove {
             move_src: *src,
             move_dest: *dest,
             piece_eaten: self.board[*dest].0.take(),
+            prompted: None,
         };
         self.board.swap(src, dest);
         self.moves_tracker.push_back(chess_move)
     }
 }
-
 
 /// format algebraic notation alphabetic
 pub fn algebraic_notation_letters_formatted(f: &mut Formatter) {

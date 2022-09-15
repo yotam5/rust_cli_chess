@@ -2,7 +2,7 @@ use core::panic;
 use std::convert::From;
 use std::fmt;
 
-#[derive(Debug, Eq, PartialEq,Copy,Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Piece {
     pub p_type: PieceType,
     pub p_color: Color,
@@ -10,10 +10,7 @@ pub struct Piece {
 
 impl Piece {
     pub fn new(p_type: PieceType, p_color: Color) -> Self {
-        Piece {
-            p_type,
-            p_color,
-        }
+        Piece { p_type, p_color }
     }
 }
 
@@ -63,7 +60,7 @@ impl From<char> for PieceType {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Copy,Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Position {
     pub x: i8,
     pub y: i8,
@@ -74,7 +71,6 @@ impl Position {
         Position { x, y }
     }
 }
-
 
 impl From<char> for Piece {
     fn from(item: char) -> Self {

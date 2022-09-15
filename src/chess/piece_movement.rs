@@ -31,10 +31,9 @@ impl Velocity {
         }
         Velocity::gcd(y, x % y)
     }
-
 }
 
-pub fn is_valid_move(piece_type: &PieceType, src: &Position, dest: &Position) -> bool{
+pub fn is_valid_move(piece_type: &PieceType, src: &Position, dest: &Position) -> bool {
     use PieceType::*;
     match piece_type {
         Knight => is_valid_knight_move(src, dest),
@@ -59,18 +58,17 @@ pub fn is_valid_pawn_move(src: &Position, dest: &Position) -> bool {
     let vx_abs = v.x.abs();
     let vy_abs = v.y.abs();
     let scalar_abs = v.scalar.abs();
-    let comp = (vx_abs,vy_abs);
+    let comp = (vx_abs, vy_abs);
 
     // move 2 times if moved for the first time
-    if scalar_abs > 2{
-        return false
+    if scalar_abs > 2 {
+        return false;
     }
-    if ![(1,1),(1,0),(2,0)].contains(&comp){
-        return false
+    if ![(1, 1), (1, 0), (2, 0)].contains(&comp) {
+        return false;
     }
 
-    if  scalar_abs == 2   {
-
+    if scalar_abs == 2 {
         // the rows that pawn begin with, relative index 1 is index 0
         // if the pawn move 2 squares it must remain in the same column
         return [1, 6].contains(&src.x) && v.y == 0;
@@ -85,9 +83,8 @@ pub fn is_valid_rook_move(src: &Position, dest: &Position) -> bool {
 
 /// check if bishop is valid as it can move only diagonally
 pub fn is_valid_bishop_move(src: &Position, dest: &Position) -> bool {
-    let vel = Velocity::new(src,dest);
-    (vel.x.abs(),vel.y.abs()) == (1,1)
-    
+    let vel = Velocity::new(src, dest);
+    (vel.x.abs(), vel.y.abs()) == (1, 1)
 }
 
 /// check if queen move is valid as it can move both as Bishop and Rook
