@@ -11,13 +11,11 @@ use super::piece::Position;
 // NOTE: CAPLOCK + K is like mouse press
 type MyResult<T> = Result<T, Box<dyn Error>>;
 
-pub struct AlgebraicNotation
-{
+pub struct AlgebraicNotation {
     square_source: u8,
     square_dest: u8,
     promotion: Option<u8>,
 }
-
 
 /// chess move is only the action in the turn
 /// for example Pawn prompted: e7e8q
@@ -29,10 +27,8 @@ pub struct ChessMove {
     pub prompted: Option<PieceType>,
 }
 
-impl ChessMove
-{
-    pub fn new(ps: Position, pd: Position, pr: Option<PieceType>) -> Self
-    {
+impl ChessMove {
+    pub fn new(ps: Position, pd: Position, pr: Option<PieceType>) -> Self {
         ChessMove {
             piece_source: ps,
             piece_dest: pd,
@@ -50,23 +46,19 @@ pub struct ChessTurn {
     pub piece_eaten: Option<Piece>,
 }
 
-pub fn is_valid_uci_piece_character(piece_char: &u8) -> bool
-{
+pub fn is_valid_uci_piece_character(piece_char: &u8) -> bool {
     ['r', 'k', 'b', 'q', 'n', 'p'].contains(&(*piece_char as char))
 }
 
-pub fn is_valid_promotion(piece_char: &u8) -> bool
-{
+pub fn is_valid_promotion(piece_char: &u8) -> bool {
     is_valid_uci_piece_character(piece_char) && (*piece_char as char) != 'k'
 }
 
-pub fn is_valid_algebraic_notation_column(column: &char) -> bool
-{
+pub fn is_valid_algebraic_notation_column(column: &char) -> bool {
     ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].contains(column)
 }
 
-pub fn is_valid_algebraic_notation_row(row: &char) -> bool
-{
+pub fn is_valid_algebraic_notation_row(row: &char) -> bool {
     let column = row.to_digit(10);
     if column.is_none() {
         return false;
@@ -92,7 +84,7 @@ pub fn parse_algebraic_notation(col: &u8, row: &u8) -> MyResult<Position> {
     if is_valid_algebraic_notation(col, row) {
         let column = col - b'a';
         let row = (*row as char).to_digit(10).unwrap() - 1;
-        println!("pos: {}-{}",row as i8, column as i8);
+        println!("pos: {}-{}", row as i8, column as i8);
         return Ok(Position::new(row as i8, column as i8));
     }
     Err("Invalid algebraic notation for piece location")?

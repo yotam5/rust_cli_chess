@@ -17,7 +17,6 @@ type MyResult<T> = Result<T, Box<dyn Error>>;
 
 pub struct BoardSizeInfo();
 
-
 pub struct KingsTracker {
     pub(super) white_king_pos: Position,
     pub(super) black_king_pos: Position,
@@ -173,7 +172,6 @@ impl BoardManager {
 
             let current_square = &self.board[curr_pos];
 
-            // todo!: check if it invalidate eating an enemy
             if curr_pos == *dest && !self.same_owner(src, &curr_pos) {
                 break;
             }
@@ -287,23 +285,37 @@ impl BoardManager {
         let piece_source = &self.board[chess_move.piece_source].0;
         piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
 
-        let dest_is_invalid = self.same_owner(&chess_move.piece_source,
-                                              &chess_move.piece_dest);
+        let dest_is_invalid = self.same_owner(&chess_move.piece_source, &chess_move.piece_dest);
 
         if dest_is_invalid {
             Err("Can't Eat The Same Color")?;
         }
 
         let piece_source = piece_source.unwrap();
-        let valid_move = pm::is_valid_move(&piece_source.p_type,
-                                           &chess_move.piece_source, &chess_move.piece_dest);
+        let valid_move = pm::is_valid_move(
+            &piece_source.p_type,
+            &chess_move.piece_source,
+            &chess_move.piece_dest,
+        );
 
         if !valid_move {
             Err("Piece Can't Move That Way")?;
         }
 
-        if !self.check_dest_path_is_clear(&chess_move.piece_source,
-                                          &chess_move.piece_dest) {
+        let prompted = chess_move.prompted.is_some();
+
+        if prompted && piece_source.p_type != PieceType::Pawn {
+            Err("Only Pawn Can Be Promoted")?;
+        }
+
+        let in_last_respective_row =
+            [0, BoardSizeInfo::row_count() - 1].contains(&chess_move.piece_dest.no_row());
+
+        if prompted && !in_last_respective_row {
+            Err("Pawn Can Be Promoted Only At The last Respective Row")?;
+        }
+
+        if !self.check_dest_path_is_clear(&chess_move.piece_source, &chess_move.piece_dest) {
             Err("That Piece Movement Path Is Blocked")?;
         }
 
@@ -331,11 +343,19 @@ impl BoardManager {
     /// undo any last move that have been done by regardless
     fn undo_move_regardless(&mut self) {
         let last_move = self.moves_tracker.pop_back().unwrap();
-        
-        self.board[last_move.chess_move.piece_source].0 = last_move.piece_eaten;
+        let chess_move = last_move.chess_move;
 
-        self.board.swap(&last_move.chess_move.piece_source,
-                        &last_move.chess_move.piece_dest);
+        let prompted = chess_move.prompted;
+
+        self.board[chess_move.piece_source].0 = last_move.piece_eaten;
+
+        if prompted.is_some() {
+            self.board[chess_move.piece_dest].0.as_mut().unwrap().p_type = PieceType::Pawn;
+        }
+        self.board.swap(
+            &last_move.chess_move.piece_source,
+            &last_move.chess_move.piece_dest,
+        );
     }
 
     /// make a move even if not legal
@@ -351,7 +371,14 @@ impl BoardManager {
             chess_move: *chess_move,
             piece_eaten: self.board[chess_move.piece_dest].0.take(),
         };
-        self.board.swap(&chess_move.piece_source, &chess_move.piece_dest);
+
+        if chess_move.prompted.is_some() {
+            let replace_pawn_with = chess_move.prompted.unwrap();
+            self.board[chess_move.piece_source] =
+                Square::new(Piece::new(replace_pawn_with, piece_source.p_color))
+        }
+        self.board
+            .swap(&chess_move.piece_source, &chess_move.piece_dest);
         self.moves_tracker.push_back(chess_turn)
     }
 }
