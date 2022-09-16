@@ -28,8 +28,8 @@ fn same_owner_test() {
     ];
 
     for (src, dest, expected) in test_data {
-        let src_pos = parse_algebraic_notation(&[src.0, src.1]).unwrap();
-        let dest_pos = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        let src_pos = parse_algebraic_notation(&src.0, &src.1).unwrap();
+        let dest_pos = parse_algebraic_notation(&dest.0, &dest.1).unwrap();
         assert_eq!(board.same_owner(&src_pos, &dest_pos), expected);
     }
 }
@@ -39,9 +39,11 @@ fn algebraic_notation_test() {
     use chess::parse::*;
     let (num_arr, char_arr) = generate_algebraic_notation_arrays();
     for (n, c) in num_arr.into_iter().zip(char_arr.into_iter()) {
-        let result = parse_algebraic_notation(&[n as u8, c as u8]);
+        let result = parse_algebraic_notation(
+            &(n as u8), &(c as u8));
         assert!(result.is_err());
-        let result = parse_algebraic_notation(&[c as u8, n as u8]);
+        let result = parse_algebraic_notation(
+            &(c as u8), &(n as u8));
         assert!(result.is_ok());
     }
 }
@@ -49,7 +51,8 @@ fn algebraic_notation_test() {
 #[test]
 fn test_knight_moves() {
     let src_position = (b'e', b'4');
-    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+    let src_position = parse_algebraic_notation(
+        &src_position.0, &src_position.1).unwrap();
     let valid_destinations = [
         (b'c', b'3'),
         (b'c', b'5'),
@@ -61,7 +64,8 @@ fn test_knight_moves() {
         (b'g', b'5'),
     ];
 
-    move_validation_helper(&valid_destinations, PieceType::Knight, src_position, true);
+    move_validation_helper(&valid_destinations, PieceType::Knight
+                           , src_position, true);
 
     let invalid_destinations = [
         (b'f', b'4'),
@@ -84,7 +88,8 @@ fn test_knight_moves() {
 #[test]
 fn test_pawn_moves() {
     let src_position = (b'b', b'2');
-    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+    let src_position = parse_algebraic_notation(&src_position.0,
+                                                &src_position.1).unwrap();
 
     let valid_destinations = [(b'a', b'3'), (b'b', b'3'), (b'c', b'3'), (b'b', b'4')];
 
@@ -98,7 +103,8 @@ fn test_pawn_moves() {
 #[test]
 fn test_queen_moves() {
     let src_position = (b'f', b'3');
-    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+    let src_position = parse_algebraic_notation(&src_position.0,
+                                                &src_position.1).unwrap();
 
     let valid_destinations = [
         (b'f', b'6'),
@@ -111,13 +117,15 @@ fn test_queen_moves() {
         (b'e', b'3'),
     ];
 
-    move_validation_helper(&valid_destinations, PieceType::Queen, src_position, true);
+    move_validation_helper(&valid_destinations, PieceType::Queen,
+                           src_position, true);
 }
 
 #[test]
 fn test_king_moves() {
     let src_position = (b'f', b'3');
-    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+    let src_position = parse_algebraic_notation(&src_position.0,
+                                                &src_position.1).unwrap();
 
     let valid_destinations = [
         (b'f', b'4'),
@@ -152,7 +160,7 @@ pub fn move_validation_helper(
 ) {
     use PieceType::*;
     for dest in arr_of_moves {
-        let dest_position = parse_algebraic_notation(&[dest.0, dest.1]).unwrap();
+        let dest_position = parse_algebraic_notation(&dest.0, &dest.1).unwrap();
         let validation_result = match p_type {
             King => is_valid_king_move(&source_position, &dest_position),
             Queen => is_valid_queen_move(&source_position, &dest_position),
@@ -168,7 +176,8 @@ pub fn move_validation_helper(
 #[test]
 fn test_rook_moves() {
     let src_position = (b'e', b'4');
-    let src_position = parse_algebraic_notation(&[src_position.0, src_position.1]).unwrap();
+    let src_position = parse_algebraic_notation(&src_position.0,
+                                                &src_position.1).unwrap();
 
     let valid_destinations = [(b'a', b'4'), (b'e', b'1'), (b'h', b'4'), (b'e', b'8')];
     move_validation_helper(&valid_destinations, PieceType::Rook, src_position, true);

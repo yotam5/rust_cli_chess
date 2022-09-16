@@ -22,33 +22,52 @@ pub struct AlgebraicNotation
 /// chess move is only the action in the turn
 /// for example Pawn prompted: e7e8q
 /// castling is just like movingthe king to the rook
+#[derive(Debug, Copy, Clone)]
 pub struct ChessMove {
-    piece_source: Position,
-    piece_dest: Position,
-    prompted: Option<Piece>,
+    pub piece_source: Position,
+    pub piece_dest: Position,
+    pub prompted: Option<PieceType>,
+}
+
+impl ChessMove
+{
+    pub fn new(ps: Position, pd: Position, pr: Option<PieceType>) -> Self
+    {
+        ChessMove {
+            piece_source: ps,
+            piece_dest: pd,
+            prompted: pr,
+        }
+    }
 }
 
 /// chess turn is used to redo the turn
 /// and save the previous turns in the game,
 /// after they have been applied
+#[derive(Debug, Copy, Clone)]
 pub struct ChessTurn {
-    chess_move: ChessMove,
-    piece_eaten: Option<Piece>,
+    pub chess_move: ChessMove,
+    pub piece_eaten: Option<Piece>,
 }
 
-pub fn is_valid_uci_piece_character(piece_char: &char) -> bool
+pub fn is_valid_uci_piece_character(piece_char: &u8) -> bool
 {
-    ['r', 'k', 'b', 'q', 'n', 'p'].contains(piece_char)
+    ['r', 'k', 'b', 'q', 'n', 'p'].contains(&(*piece_char as char))
 }
 
-pub fn is_valid_algebraic_notation_row(row: &char) -> bool
+pub fn is_valid_promotion(piece_char: &u8) -> bool
 {
-    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].contains(row)
+    is_valid_uci_piece_character(piece_char) && (*piece_char as char) != 'k'
 }
 
 pub fn is_valid_algebraic_notation_column(column: &char) -> bool
 {
-    let column = column.to_digit(10);
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].contains(column)
+}
+
+pub fn is_valid_algebraic_notation_row(row: &char) -> bool
+{
+    let column = row.to_digit(10);
     if column.is_none() {
         return false;
     }
@@ -57,25 +76,9 @@ pub fn is_valid_algebraic_notation_column(column: &char) -> bool
 }
 
 /// check if algebraic notation is valid
-pub fn is_valid_algebraic_notation(an_arr: &[u8; 2]) -> bool {
-    let row = an_arr[0];
-    let column = an_arr[1];
-
-    if !(row.is_ascii_alphabetic() && row.is_ascii_lowercase() && column.is_ascii_digit()) {
-        return false;
-    }
-
-    let valid_row = is_valid_algebraic_notation_row(&(row as char));
-    if !valid_row {
-        return false;
-    }
-
-    let valid_column = is_valid_algebraic_notation_column(&(column as char));
-    if !valid_column {
-        return false;
-    }
-
-    true
+pub fn is_valid_algebraic_notation(column: &u8, row: &u8) -> bool {
+    is_valid_algebraic_notation_column(&(*column as char))
+        && is_valid_algebraic_notation_row(&(*row as char))
 }
 
 /// need to parse string to a move,
@@ -85,10 +88,11 @@ pub fn is_valid_algebraic_notation(an_arr: &[u8; 2]) -> bool {
 
 /// parse algebraic notation to Position on board note the subtraction of 1
 /// for board array indexing that starts with 0
-pub fn parse_algebraic_notation(an_arr: &[u8; 2]) -> MyResult<Position> {
-    if is_valid_algebraic_notation(an_arr) {
-        let column = an_arr[0] - b'a';
-        let row = (an_arr[1] as char).to_digit(10).unwrap() - 1;
+pub fn parse_algebraic_notation(col: &u8, row: &u8) -> MyResult<Position> {
+    if is_valid_algebraic_notation(col, row) {
+        let column = col - b'a';
+        let row = (*row as char).to_digit(10).unwrap() - 1;
+        println!("pos: {}-{}",row as i8, column as i8);
         return Ok(Position::new(row as i8, column as i8));
     }
     Err("Invalid algebraic notation for piece location")?

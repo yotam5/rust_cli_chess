@@ -1,53 +1,80 @@
-use std::io::{self, BufReader, Read, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
+use std::ops::Index;
 
 use chess::board_manager::BoardManager;
 use chess::parse;
-use chess::piece::Position;
+use chess::parse::ChessMove;
+use chess::piece::PieceType;
+use crate::parse::{is_valid_promotion, is_valid_uci_piece_character, parse_algebraic_notation};
 
-use crate::parse::parse_algebraic_notation;
+type MyResult<T> = Result<T, dyn std::error::Error>;
 
 pub mod chess;
 
-fn input_read() -> ([u8; 2], [u8; 2]) {
+fn input_user_move() -> String {
+    let mut input = String::with_capacity(4);
+    io::stdout().flush().unwrap();
     let stdin = io::stdin();
-    let mut square_from: [u8; 2] = Default::default();
-    let mut square_to: [u8; 2] = Default::default();
-
-    io::stdout().flush().unwrap();
-    let mut bstdin = BufReader::new(stdin.take(5));
-    let _ = bstdin.read(&mut square_from).unwrap();
-    let _ = bstdin.read(&mut square_to).unwrap();
-    io::stdout().flush().unwrap();
-
-    (square_from, square_to)
+    let mut bstdin = BufReader::new(stdin.take(6));
+    bstdin.read_line(&mut input).unwrap();
+    let _ = input.pop();
+    input
 }
+
+fn parse_chess_move(chess_move: &str) -> Result<ChessMove, Box<dyn std::error::Error>>
+{
+    let mut chess_move_chunks = chess_move.as_bytes().chunks(2);
+    if chess_move_chunks.len() < 2 || chess_move_chunks.len() > 3
+    {
+        Err("Chess Move Is Two Squares And Optional Promotion")?;
+    }
+
+    let source_square = chess_move_chunks.next().unwrap();
+    let source_square = parse_algebraic_notation(
+        source_square.index(0),
+        source_square.index(1),
+    )?;
+
+    let dest_square = chess_move_chunks.next().unwrap();
+    let dest_square = parse_algebraic_notation(
+        dest_square.index(0),
+        dest_square.index(1),
+    )?;
+
+    let mut promotion_chunk = chess_move_chunks.next();
+    let mut promotion_type = None;
+    if promotion_chunk.is_some() {
+        let promotion_chunk = promotion_chunk.unwrap();
+        if !is_valid_promotion(&promotion_chunk[0]) {
+            Err("Not A Valid Promotion Piece")?;
+        }
+        let piece_char = promotion_chunk[0] as char;
+        promotion_type= Some(piece_char.into());
+    }
+
+    Ok(ChessMove::new(source_square, dest_square, promotion_type))
+}
+
 
 fn clear_screen() {
     print!("\x1B[2J\x1B[1;1H");
 }
 
-fn ask_input() -> ([u8; 2], [u8; 2]) {
-    println!("enter move:");
-    input_read()
-}
+fn get_user_move() -> ChessMove {
+    let mut move_info = input_user_move();
+    let mut parsed_move_info = parse_chess_move(&move_info);
 
-fn get_user_move() -> (Position, Position) {
-    let mut move_info = ask_input();
-    let mut square_from = parse_algebraic_notation(&move_info.0);
-    let mut square_to = parse_algebraic_notation(&move_info.1);
+    while parsed_move_info.is_err() {
+        println!("move_infoo: {:?}", &move_info);
+        println!("{:?}",&parsed_move_info);
 
-    while square_to.is_err() || square_from.is_err() {
-        if square_to.is_err() {
-            println!("{:?}", &square_to);
-        }
-        if square_from.is_err() {
-            println!("{:?}", &square_from);
-        }
-        move_info = ask_input();
-        square_from = parse_algebraic_notation(&move_info.0);
-        square_to = parse_algebraic_notation(&move_info.1);
+        move_info = input_user_move();
+
+        println!("29-{}",&move_info);
+        parsed_move_info = parse_chess_move(&move_info);
+
     }
-    (square_from.unwrap(), square_to.unwrap())
+    parsed_move_info.unwrap()
 }
 
 pub fn run_game() {
@@ -57,14 +84,17 @@ pub fn run_game() {
     println!("{:?}", std::mem::size_of::<parse::AlgebraicNotation>());
     println!("{}", &board);
     while !game_end {
+        println!("loop enter");
         let move_info = get_user_move();
-        let move_result = board.handle_move(&move_info.0, &move_info.1);
+        println!("move_info in loop: {:?}",&move_info);
+        let move_result = board.handle_move(&move_info);
         if move_result.is_err() {
-            println!("{:?}", &move_result);
+            println!("Illegal move: {:?}", &move_result);
             continue;
         }
-        clear_screen();
+        println!("legal move entered");
+        //clear_screen();
         println!("{}", &board);
-        println!("{:?}", &board);
+        println!("board_debug: {:?}", &board);
     }
 }
