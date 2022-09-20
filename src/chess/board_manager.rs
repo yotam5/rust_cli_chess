@@ -227,7 +227,7 @@ impl BoardManager {
 impl BoardManager {
     /// load starting position for the chess game
     fn load_default_game_position(board: &mut Board) -> KingsTracker {
-        //rnbq1bnr/Kpppp1p1/8/8/8/8/1PPPP1Pk/RNBQ1BNR
+        //cccccccccccccccccccccccccccccccc:rnbq1bnr/Kpppp1p1/8/8/8/8/1PPPP1Pk/RNBQ1BNR
         let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         BoardManager::load_fen_string_to_board(board, initial_game_position).unwrap()
     }
@@ -237,22 +237,25 @@ impl BoardManager {
         let mut black_king_pos = None;
         let mut white_king_pos = None;
         for (line_number, line_fen_value) in fen_string.split('/').enumerate() {
-            let mut current_line_index: usize = 0;
+            let mut current_column_index: usize = 0;
 
             for fen_value in line_fen_value.chars() {
                 if fen_value.is_numeric() {
                     let fen_value = fen_value.to_digit(10).unwrap() as usize;
-                    for empty_index in current_line_index..fen_value {
-                        board[(BoardSizeInfo::row_count() - 1 - line_number, empty_index)] =
-                            Square::default();
+
+                    for _ in 0..fen_value {
+                        board[(
+                            BoardSizeInfo::row_count() - 1 - line_number,
+                            current_column_index,
+                        )] = Square::default();
+                        current_column_index += 1;
                     }
-                    current_line_index += fen_value - 1;
                 } else if fen_value.is_ascii_alphabetic() {
                     let p_type = fen_value.into();
                     let p_color = fen_value.into();
                     let p_position = Position::new(
                         (BoardSizeInfo::row_count() - 1 - line_number) as i8,
-                        current_line_index as i8,
+                        current_column_index as i8,
                     );
                     match (p_type, p_color) {
                         (King, Color::White) => white_king_pos = Some(p_position),
@@ -261,9 +264,9 @@ impl BoardManager {
                     }
                     board[(
                         BoardSizeInfo::row_count() - (line_number + 1),
-                        current_line_index, // note: fixes pices shifted to the right, need to check why
+                        current_column_index, // note: fixes pices shifted to the right, need to check why
                     )] = Square::new(Piece::new(p_type, p_color));
-                    current_line_index += 1;
+                    current_column_index += 1;
                 }
             }
         }
