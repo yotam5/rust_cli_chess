@@ -53,6 +53,7 @@ impl Square {
     }
 }
 
+#[derive(Debug)]
 pub struct BoardManager {
     board: Board,
     turns_counter: usize,
@@ -61,16 +62,18 @@ pub struct BoardManager {
     black_king_pos: Position,
 }
 
-impl fmt::Debug for BoardManager {
+/*impl fmt::Debug for BoardManager {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("BoardManager")
             .field("turns_counter", &self.turns_counter)
             .field("moves_tracker", &self.moves_tracker)
             .field("white king pos", &self.white_king_pos)
             .field("black king pos", &self.black_king_pos)
+
             .finish()
     }
 }
+*/
 
 impl GridIdx for Position {
     fn no_row(&self) -> usize {
@@ -136,7 +139,6 @@ impl BoardManager {
         /*
          MAYBE ADD CACHING
         */
-
         let king_pos = match king_color {
             Color::White => self.white_king_pos,
             Color::Black => self.black_king_pos,
@@ -160,7 +162,6 @@ impl BoardManager {
     }
 
     /// check that the move is valid, if piece dest is legal movement if not interrupted by anything
-
     /// check that the movement path of the  piece is clear, not blocked
     pub fn check_dest_path_is_clear(&self, src: &Position, dest: &Position) -> bool {
         let velocity = Velocity::new(src, dest);
@@ -226,6 +227,7 @@ impl BoardManager {
 impl BoardManager {
     /// load starting position for the chess game
     fn load_default_game_position(board: &mut Board) -> KingsTracker {
+        //rnbq1bnr/Kpppp1p1/8/8/8/8/1PPPP1Pk/RNBQ1BNR
         let initial_game_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         BoardManager::load_fen_string_to_board(board, initial_game_position).unwrap()
     }
@@ -259,7 +261,7 @@ impl BoardManager {
                     }
                     board[(
                         BoardSizeInfo::row_count() - (line_number + 1),
-                        current_line_index,
+                        current_line_index, // note: fixes pices shifted to the right, need to check why
                     )] = Square::new(Piece::new(p_type, p_color));
                     current_line_index += 1;
                 }
@@ -285,6 +287,9 @@ impl BoardManager {
         let piece_source = &self.board[chess_move.piece_source].0;
         piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
 
+        // todo! need to check if castling is being done, also check if rook and king didnt move before
+        // maybe a simple hashmap/array to track if king/rook used
+        // to do an if dest owner == source owner then check if castling if so check legallty + in check
         let dest_is_invalid = self.same_owner(&chess_move.piece_source, &chess_move.piece_dest);
 
         if dest_is_invalid {
@@ -332,7 +337,7 @@ impl BoardManager {
     }
 
     fn perform_move(&mut self, chess_move: &ChessMove) -> MyResult<()> {
-        let _ = self.validate_move(chess_move)?;
+        self.validate_move(chess_move)?;
 
         self.do_move_regardless(chess_move);
 

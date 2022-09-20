@@ -84,7 +84,6 @@ pub fn parse_algebraic_notation(col: &u8, row: &u8) -> MyResult<Position> {
     if is_valid_algebraic_notation(col, row) {
         let column = col - b'a';
         let row = (*row as char).to_digit(10).unwrap() - 1;
-        println!("pos: {}-{}", row as i8, column as i8);
         return Ok(Position::new(row as i8, column as i8));
     }
     Err("Invalid algebraic notation for piece location")?

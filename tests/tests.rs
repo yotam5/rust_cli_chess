@@ -1,12 +1,12 @@
 use cte::chess;
 use cte::chess::board_manager::BoardManager;
-use cte::chess::parse::parse_algebraic_notation;
+use cte::chess::parse::{parse_algebraic_notation, ChessMove};
 use cte::chess::piece::{Color, PieceType, Position};
 use cte::chess::piece_movement::{
     is_valid_bishop_move, is_valid_king_move, is_valid_knight_move, is_valid_pawn_move,
     is_valid_queen_move, is_valid_rook_move,
 };
-
+//this wont be saved
 fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8]) {
     let letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     let numbers = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -14,10 +14,17 @@ fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8]) {
 }
 
 #[test]
+fn promote_pawn() {
+    // todo! need to fix parsed, shifting to the left for some reason
+    let mut board = BoardManager::new_from_fen("rn1q1bnr/1Kpppppp/8/8/8/8/PPPPPPk1/RNBQ3R");
+    println!("{}", &board);
+    println!("{:?}", &board);
+}
+
+#[test]
 fn same_owner_test() {
-    use chess::board_manager::BoardManager;
-    use chess::parse::parse_algebraic_notation;
     let board = BoardManager::new();
+    println!("{}", &board);
     let test_data = [
         ((b'a', b'1'), (b'a', b'2'), true),  // white to white
         ((b'a', b'8'), (b'a', b'7'), true),  // black to black
@@ -26,7 +33,6 @@ fn same_owner_test() {
         ((b'a', b'5'), (b'a', b'4'), false), // emtpy to empty
         ((b'a', b'2'), (b'a', b'7'), false), // white to black
     ];
-
     for (src, dest, expected) in test_data {
         let src_pos = parse_algebraic_notation(&src.0, &src.1).unwrap();
         let dest_pos = parse_algebraic_notation(&dest.0, &dest.1).unwrap();
