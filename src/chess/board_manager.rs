@@ -91,6 +91,7 @@ impl Default for BoardManager {
             Board::filled_with_default(BoardSizeInfo::row_count(), BoardSizeInfo::column_count());
 
         let king_tracker = BoardManager::load_default_game_position(&mut board);
+        let a = 4;
 
         BoardManager {
             board,
@@ -286,19 +287,20 @@ impl BoardManager {
         })
     }
 
+    fn is_castling(&self,src: &Position, dest: &Position) -> bool{
+
+    }
+    
     fn validate_move(&mut self, chess_move: &ChessMove) -> MyResult<Piece> {
         let piece_source = &self.board[chess_move.piece_source].0;
         piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;
-
         // todo! need to check if castling is being done, also check if rook and king didnt move before
         // maybe a simple hashmap/array to track if king/rook used
         // to do an if dest owner == source owner then check if castling if so check legallty + in check
-        let dest_is_invalid = self.same_owner(&chess_move.piece_source, &chess_move.piece_dest);
 
-        if dest_is_invalid {
+        if self.same_owner(&chess_move.piece_source, &chess_move.piece_dest) {
             Err("Can't Eat The Same Color")?;
         }
-
         let piece_source = piece_source.unwrap();
         let valid_move = pm::is_valid_move(
             &piece_source.p_type,

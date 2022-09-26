@@ -16,9 +16,10 @@ fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8]) {
 #[test]
 fn promote_pawn() {
     // todo! need to fix parsed, shifting to the left for some reason
-    let mut board = BoardManager::new_from_fen("rnbq2nr/Kpppp1p1/8/8/8/8/1PPPP1Pk/RNBQ1BNR");
-    println!("{}", &board);
-    println!("{:?}", &board);
+    let mut board = BoardManager::new_from_fen("rnbqkbnr/1Pppp2p/8/8/4P3/8/pP1PP1PP/RNBQKBNR");
+    println!("promote pawn {}", &board);
+    board. 
+    //println!("{:?}", &board);
 }
 
 #[test]

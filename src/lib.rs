@@ -55,10 +55,9 @@ fn clear_screen() {
 fn get_user_move() -> ChessMove {
     let mut move_info = input_user_move();
     let mut parsed_move_info = parse_chess_move(&move_info);
-
     while parsed_move_info.is_err() {
         println!("{:?}", &parsed_move_info);
-
+        
         move_info = input_user_move();
 
         parsed_move_info = parse_chess_move(&move_info);
@@ -69,8 +68,9 @@ fn get_user_move() -> ChessMove {
 pub fn run_game() {
     let mut board = BoardManager::new();
     //println!("{:?}", &board);
+    let mn = String::new();
     let mut game_end = false;
-    println!("{:?}", std::mem::size_of::<parse::AlgebraicNotation>());
+    //println!("{:?}", std::mem::size_of::<parse::AlgebraicNotation>());
     println!("{}", &board);
     while !game_end {
         let move_info = get_user_move();
