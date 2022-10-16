@@ -1,15 +1,13 @@
 use std::collections::VecDeque;
 use std::error::Error;
-use std::fmt;
-use std::fmt::Formatter;
+use std::fmt; use std::fmt::Formatter;
 
 use array2ds::array2d::Array2d;
 use array2ds::array2d::GridIdx;
 
 use crate::chess::piece::PieceType::King;
 
-use super::parse::{ChessMove, ChessTurn};
-use super::piece::{Color, Piece, PieceType, Position};
+use super::parse::{ChessMove, ChessTurn}; use super::piece::{Color, Piece, PieceType, Position};
 use super::piece_movement as pm;
 use super::piece_movement::Velocity;
 
@@ -91,7 +89,6 @@ impl Default for BoardManager {
             Board::filled_with_default(BoardSizeInfo::row_count(), BoardSizeInfo::column_count());
 
         let king_tracker = BoardManager::load_default_game_position(&mut board);
-        let a = 4;
 
         BoardManager {
             board,
@@ -287,10 +284,36 @@ impl BoardManager {
         })
     }
 
-    fn is_castling(&self,src: &Position, dest: &Position) -> bool{
-
+    /// check if castling legal, if the rook didnt move and also the king
+    /// if each of them doesnt appear is any previous move as dest/src
+    fn is_castling_legal(&self, src: &Position, dest: &Position) -> bool {
+        for cm in &self.moves_tracker {
+            let cmp = &cm.chess_move.piece_dest;
+            let cms = &cm.chess_move.piece_source;
+            if src == cmp || src == cms || dest == cmp || dest == cms {
+                return false;
+            }
+        }
+        true
     }
-    
+
+    /// check if the source if king the the desk is rook
+    fn is_castling(&self, src: &Position, dest: &Position) -> bool {
+        let piece_source = self.board[*src];
+        let piece_dest = self.board[*dest];
+
+        if piece_source.is_empty() || piece_dest.is_empty() {
+            return false;
+        }
+        let piece_source = piece_source.0.unwrap();
+        let piece_dest = piece_dest.0.unwrap();
+
+        if piece_source.p_type == PieceType::King && piece_dest.p_type == PieceType::Rook {
+            return true;
+        }
+        false
+    }
+
     fn validate_move(&mut self, chess_move: &ChessMove) -> MyResult<Piece> {
         let piece_source = &self.board[chess_move.piece_source].0;
         piece_source.ok_or("Illegal Move, Can't Move An Empty Square")?;

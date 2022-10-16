@@ -17,22 +17,29 @@ fn generate_algebraic_notation_arrays() -> ([char; 8], [char; 8]) {
 fn promote_pawn() {
     // todo! need to fix parsed, shifting to the left for some reason
     let mut board = BoardManager::new_from_fen("rnbqkbnr/1Pppp2p/8/8/4P3/8/pP1PP1PP/RNBQKBNR");
-    println!("promote pawn {}", &board);
-    board. 
-    //println!("{:?}", &board);
+    let src = parse_algebraic_notation(&b'b',&b'7').unwrap();
+    let dst = parse_algebraic_notation(&b'a',&b'8').unwrap();
+    let prompt_to = Some(PieceType::Knight);
+    let m = ChessMove{
+        piece_source: src,
+        piece_dest: dst,
+        prompted: prompt_to,
+    };
+    let mr = board.handle_move(&m);
+
 }
 
 #[test]
 fn same_owner_test() {
     let board = BoardManager::new();
-    println!("{}", &board);
-    let test_data = [
+    let test_data = 
+    [
         ((b'a', b'1'), (b'a', b'2'), true),  // white to white
         ((b'a', b'8'), (b'a', b'7'), true),  // black to black
         ((b'a', b'2'), (b'a', b'3'), false), // white to empty
         ((b'a', b'7'), (b'a', b'6'), false), //black to empty
         ((b'a', b'5'), (b'a', b'4'), false), // emtpy to empty
-        ((b'a', b'2'), (b'a', b'7'), false), // white to black
+        ((b'a', b'2'), (b'a', b'7'), false), // white to blac;
     ];
     for (src, dest, expected) in test_data {
         let src_pos = parse_algebraic_notation(&src.0, &src.1).unwrap();
